@@ -13,7 +13,7 @@ export default function Home() {
     return onAuthStateChanged(
       getFirebaseAuth(),
       (user) => {
-        router.replace(user ? '/dashboard' : '/login');
+        router.replace(user ? '/dashboard/home' : '/login');
       },
       (authError) => setError(authError.message)
     );

@@ -21,16 +21,21 @@ export default function Login() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting) {
+      return;
+    }
+
     setError(null);
     setIsSubmitting(true);
 
     try {
       await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
-      router.replace('/dashboard');
+      router.replace('/dashboard/home');
     } catch (signInError) {
       setError(
         signInError instanceof Error ? signInError.message : 'Unable to sign in. Please try again.'
       );
+    } finally {
       setIsSubmitting(false);
     }
   }
@@ -52,13 +57,13 @@ export default function Login() {
         sx={{ width: '100%', maxWidth: 400 }}
       >
         <Typography component="h1" variant="h4" sx={{ textAlign: 'center' }}>
-          Sign in
+          Iniciar sesión
         </Typography>
         <TextField
           autoComplete="email"
           autoFocus
           fullWidth
-          label="Email"
+          label="Correo electrónico"
           onChange={(event) => setEmail(event.target.value)}
           required
           type="email"
@@ -67,7 +72,7 @@ export default function Login() {
         <TextField
           autoComplete="current-password"
           fullWidth
-          label="Password"
+          label="Contraseña"
           onChange={(event) => setPassword(event.target.value)}
           required
           type="password"
@@ -75,7 +80,7 @@ export default function Login() {
         />
         {error && <Alert severity="error">{error}</Alert>}
         <Button disabled={isSubmitting} fullWidth type="submit" variant="contained" size="large">
-          {isSubmitting ? <CircularProgress color="inherit" size={24} /> : 'Sign in'}
+          {isSubmitting ? <CircularProgress color="inherit" size={24} /> : 'Iniciar sesión'}
         </Button>
       </Stack>
     </Box>
