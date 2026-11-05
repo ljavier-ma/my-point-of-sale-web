@@ -1,11 +1,21 @@
-import { getAuthenticatedJson } from '../api/api-client';
+import { getAuthenticatedJson, postAuthenticatedJson } from '../api/api-client';
 
 export interface Product {
   id: string;
-  code: string;
+  code: string | null;
   name: string;
-  stock: number;
-  publicPrice: number;
+  stock: number | null;
+  unitaryPrice: number | null;
+}
+
+export interface NewProduct {
+  name: string;
+  code?: string;
+  barcode?: string;
+  stock?: number;
+  unitaryPrice?: number;
+  idealAmount?: number;
+  lowQuantity?: number;
 }
 
 export interface PaginatedProducts {
@@ -14,6 +24,10 @@ export interface PaginatedProducts {
 }
 
 const productsEndpoint = 'http://localhost:3000/products';
+
+export async function createProduct(token: string, product: NewProduct): Promise<void> {
+  await postAuthenticatedJson(productsEndpoint, token, product);
+}
 
 export async function getProducts(
   token: string,
@@ -51,13 +65,13 @@ export async function getProducts(
       !('id' in product) ||
       typeof product.id !== 'string' ||
       !('code' in product) ||
-      typeof product.code !== 'string' ||
+      (typeof product.code !== 'string' && product.code !== null) ||
       !('name' in product) ||
       typeof product.name !== 'string' ||
       !('stock' in product) ||
-      typeof product.stock !== 'number' ||
-      !('publicPrice' in product) ||
-      typeof product.publicPrice !== 'number'
+      (typeof product.stock !== 'number' && product.stock !== null) ||
+      !('unitaryPrice' in product) ||
+      (typeof product.unitaryPrice !== 'number' && product.unitaryPrice !== null)
     ) {
       throw new Error('A product in the response has an invalid format.');
     }
@@ -67,7 +81,7 @@ export async function getProducts(
       code: product.code,
       name: product.name,
       stock: product.stock,
-      publicPrice: product.publicPrice,
+      unitaryPrice: product.unitaryPrice,
     };
   });
 
