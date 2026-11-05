@@ -37,3 +37,37 @@ export async function postAuthenticatedJson(
     throw new Error(`Request failed with status ${response.status}.`);
   }
 }
+
+export async function patchAuthenticatedJson(
+  url: string,
+  token: string,
+  body: unknown
+): Promise<void> {
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}.`);
+  }
+}
+
+export async function deleteAuthenticated(url: string, token: string): Promise<void> {
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}.`);
+  }
+}

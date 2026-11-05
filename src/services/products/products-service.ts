@@ -1,11 +1,29 @@
-import { getAuthenticatedJson, postAuthenticatedJson } from '../api/api-client';
+import {
+  deleteAuthenticated,
+  getAuthenticatedJson,
+  patchAuthenticatedJson,
+  postAuthenticatedJson,
+} from '../api/api-client';
 
 export interface Product {
   id: string;
   code: string | null;
   name: string;
+  barcode: string | null;
   stock: number | null;
   unitaryPrice: number | null;
+  idealAmount: number | null;
+  lowQuantity: number | null;
+}
+
+export interface ProductFields {
+  name: string;
+  code: string | null;
+  barcode: string | null;
+  stock: number | null;
+  unitaryPrice: number | null;
+  idealAmount: number | null;
+  lowQuantity: number | null;
 }
 
 export interface NewProduct {
@@ -27,6 +45,18 @@ const productsEndpoint = 'http://localhost:3000/products';
 
 export async function createProduct(token: string, product: NewProduct): Promise<void> {
   await postAuthenticatedJson(productsEndpoint, token, product);
+}
+
+export async function updateProduct(
+  token: string,
+  id: string,
+  product: ProductFields
+): Promise<void> {
+  await patchAuthenticatedJson(`${productsEndpoint}/${encodeURIComponent(id)}`, token, product);
+}
+
+export async function deleteProduct(token: string, id: string): Promise<void> {
+  await deleteAuthenticated(`${productsEndpoint}/${encodeURIComponent(id)}`, token);
 }
 
 export async function getProducts(
@@ -59,29 +89,41 @@ export async function getProducts(
   }
 
   const products = response.products.map((product): Product => {
+    if (typeof product !== 'object' || product === null) {
+      throw new Error('A product in the response has an invalid format.');
+    }
+
+    const code = 'code' in product ? (product.code ?? null) : null;
+    const barcode = 'barcode' in product ? (product.barcode ?? null) : null;
+    const stock = 'stock' in product ? (product.stock ?? null) : null;
+    const unitaryPrice = 'unitaryPrice' in product ? (product.unitaryPrice ?? null) : null;
+    const idealAmount = 'idealAmount' in product ? (product.idealAmount ?? null) : null;
+    const lowQuantity = 'lowQuantity' in product ? (product.lowQuantity ?? null) : null;
+
     if (
-      typeof product !== 'object' ||
-      product === null ||
       !('id' in product) ||
       typeof product.id !== 'string' ||
-      !('code' in product) ||
-      (typeof product.code !== 'string' && product.code !== null) ||
       !('name' in product) ||
       typeof product.name !== 'string' ||
-      !('stock' in product) ||
-      (typeof product.stock !== 'number' && product.stock !== null) ||
-      !('unitaryPrice' in product) ||
-      (typeof product.unitaryPrice !== 'number' && product.unitaryPrice !== null)
+      (typeof code !== 'string' && code !== null) ||
+      (typeof barcode !== 'string' && barcode !== null) ||
+      (typeof stock !== 'number' && stock !== null) ||
+      (typeof unitaryPrice !== 'number' && unitaryPrice !== null) ||
+      (typeof idealAmount !== 'number' && idealAmount !== null) ||
+      (typeof lowQuantity !== 'number' && lowQuantity !== null)
     ) {
       throw new Error('A product in the response has an invalid format.');
     }
 
     return {
       id: product.id,
-      code: product.code,
+      code,
       name: product.name,
-      stock: product.stock,
-      unitaryPrice: product.unitaryPrice,
+      barcode,
+      stock,
+      unitaryPrice,
+      idealAmount,
+      lowQuantity,
     };
   });
 

@@ -8,6 +8,9 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -19,18 +22,102 @@ import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useDashboardUser } from '../dashboard-shell';
 import {
   DEFAULT_PRODUCTS_PAGE_SIZE,
   useCreateProduct,
+  useDeleteProduct,
   useProducts,
+  useUpdateProduct,
 } from '../../../services/products/products-queries';
+import type { Product, ProductFields } from '../../../services/products/products-service';
+
+function ProductInputFields({ product }: { product?: Product | null }) {
+  return (
+    <>
+      <TextField
+        autoFocus={!product}
+        required
+        name="name"
+        label="Nombre"
+        defaultValue={product?.name ?? ''}
+        slotProps={{ htmlInput: { maxLength: 200 } }}
+      />
+      <TextField
+        name="code"
+        label="Código"
+        defaultValue={product?.code ?? ''}
+        slotProps={{ htmlInput: { maxLength: 100 } }}
+      />
+      <TextField
+        name="barcode"
+        label="Código de barras"
+        defaultValue={product?.barcode ?? ''}
+        slotProps={{ htmlInput: { maxLength: 100 } }}
+      />
+      <TextField
+        name="unitaryPrice"
+        label="Precio unitario"
+        type="number"
+        defaultValue={product?.unitaryPrice ?? ''}
+        slotProps={{ htmlInput: { min: 0, step: '0.01' } }}
+      />
+      <TextField
+        name="stock"
+        label="Existencia"
+        type="number"
+        defaultValue={product?.stock ?? ''}
+        slotProps={{ htmlInput: { min: 0, step: 1 } }}
+      />
+      <TextField
+        name="idealAmount"
+        label="Cantidad ideal"
+        type="number"
+        defaultValue={product?.idealAmount ?? ''}
+        slotProps={{ htmlInput: { min: 0, step: 1 } }}
+      />
+      <TextField
+        name="lowQuantity"
+        label="Cantidad baja"
+        type="number"
+        defaultValue={product?.lowQuantity ?? ''}
+        slotProps={{ htmlInput: { min: 0, step: 1 } }}
+      />
+    </>
+  );
+}
+
+function getProductFields(formData: FormData): ProductFields {
+  const optionalString = (fieldName: string) => {
+    const value = String(formData.get(fieldName) ?? '').trim();
+    return value || null;
+  };
+  const optionalNumber = (fieldName: string) => {
+    const value = String(formData.get(fieldName) ?? '').trim();
+    return value ? Number(value) : null;
+  };
+
+  return {
+    name: String(formData.get('name') ?? '').trim(),
+    code: optionalString('code'),
+    barcode: optionalString('barcode'),
+    unitaryPrice: optionalNumber('unitaryPrice'),
+    stock: optionalNumber('stock'),
+    idealAmount: optionalNumber('idealAmount'),
+    lowQuantity: optionalNumber('lowQuantity'),
+  };
+}
 
 export default function ProductsPage() {
   const user = useDashboardUser();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PRODUCTS_PAGE_SIZE);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
+  const [menuProduct, setMenuProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const offset = page * rowsPerPage;
   const { data, error, isError, isFetching, isPending, refetch } = useProducts(
     user,
@@ -38,11 +125,27 @@ export default function ProductsPage() {
     rowsPerPage
   );
   const createProduct = useCreateProduct(user);
+  const updateProduct = useUpdateProduct(user);
+  const deleteProduct = useDeleteProduct(user);
 
   function closeCreateDialog() {
     if (!createProduct.isPending) {
       setIsCreateDialogOpen(false);
       createProduct.reset();
+    }
+  }
+
+  function closeEditDialog() {
+    if (!updateProduct.isPending) {
+      setEditingProduct(null);
+      updateProduct.reset();
+    }
+  }
+
+  function closeDeleteDialog() {
+    if (!deleteProduct.isPending) {
+      setDeletingProduct(null);
+      deleteProduct.reset();
     }
   }
 
@@ -101,6 +204,7 @@ export default function ProductsPage() {
                     <TableCell>Código</TableCell>
                     <TableCell align="right">Existencia</TableCell>
                     <TableCell align="right">Precio unitario</TableCell>
+                    <TableCell align="right" aria-label="Acciones" />
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -118,11 +222,23 @@ export default function ProductsPage() {
                                 maximumFractionDigits: 2,
                               })}
                         </TableCell>
+                        <TableCell align="right" padding="checkbox">
+                          <IconButton
+                            aria-label={`Opciones de ${product.name}`}
+                            aria-haspopup="menu"
+                            onClick={(event) => {
+                              setMenuProduct(product);
+                              setMenuAnchorEl(event.currentTarget);
+                            }}
+                          >
+                            <MoreVertIcon />
+                          </IconButton>
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} align="center">
+                      <TableCell colSpan={5} align="center">
                         No hay productos para mostrar.
                       </TableCell>
                     </TableRow>
@@ -197,43 +313,7 @@ export default function ProductsPage() {
           <DialogTitle id="create-product-title">Crear producto</DialogTitle>
           <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
             {createProduct.isError && <Alert severity="error">{createProduct.error.message}</Alert>}
-            <TextField
-              autoFocus
-              required
-              name="name"
-              label="Nombre"
-              slotProps={{ htmlInput: { maxLength: 200 } }}
-            />
-            <TextField name="code" label="Código" slotProps={{ htmlInput: { maxLength: 100 } }} />
-            <TextField
-              name="barcode"
-              label="Código de barras"
-              slotProps={{ htmlInput: { maxLength: 100 } }}
-            />
-            <TextField
-              name="unitaryPrice"
-              label="Precio unitario"
-              type="number"
-              slotProps={{ htmlInput: { min: 0, step: '0.01' } }}
-            />
-            <TextField
-              name="stock"
-              label="Existencia"
-              type="number"
-              slotProps={{ htmlInput: { min: 0, step: 1 } }}
-            />
-            <TextField
-              name="idealAmount"
-              label="Cantidad ideal"
-              type="number"
-              slotProps={{ htmlInput: { min: 0, step: 1 } }}
-            />
-            <TextField
-              name="lowQuantity"
-              label="Cantidad baja"
-              type="number"
-              slotProps={{ htmlInput: { min: 0, step: 1 } }}
-            />
+            <ProductInputFields />
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button type="button" onClick={closeCreateDialog} disabled={createProduct.isPending}>
@@ -244,6 +324,101 @@ export default function ProductsPage() {
             </Button>
           </DialogActions>
         </Box>
+      </Dialog>
+
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={Boolean(menuAnchorEl)}
+        onClose={() => setMenuAnchorEl(null)}
+      >
+        <MenuItem
+          onClick={() => {
+            updateProduct.reset();
+            setEditingProduct(menuProduct);
+            setMenuAnchorEl(null);
+          }}
+        >
+          Editar
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            deleteProduct.reset();
+            setDeletingProduct(menuProduct);
+            setMenuAnchorEl(null);
+          }}
+        >
+          Eliminar
+        </MenuItem>
+      </Menu>
+
+      <Dialog
+        open={Boolean(editingProduct)}
+        onClose={closeEditDialog}
+        fullWidth
+        maxWidth="sm"
+        aria-labelledby="edit-product-title"
+      >
+        {editingProduct && (
+          <Box
+            key={editingProduct.id}
+            component="form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              updateProduct.mutate(
+                { id: editingProduct.id, product: getProductFields(formData) },
+                { onSuccess: () => setEditingProduct(null) }
+              );
+            }}
+          >
+            <DialogTitle id="edit-product-title">Editar producto</DialogTitle>
+            <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
+              {updateProduct.isError && (
+                <Alert severity="error">{updateProduct.error.message}</Alert>
+              )}
+              <ProductInputFields product={editingProduct} />
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2 }}>
+              <Button type="button" onClick={closeEditDialog} disabled={updateProduct.isPending}>
+                Cancelar
+              </Button>
+              <Button type="submit" variant="contained" disabled={updateProduct.isPending}>
+                {updateProduct.isPending ? 'Guardando...' : 'Guardar cambios'}
+              </Button>
+            </DialogActions>
+          </Box>
+        )}
+      </Dialog>
+
+      <Dialog
+        open={Boolean(deletingProduct)}
+        onClose={closeDeleteDialog}
+        aria-labelledby="delete-product-title"
+      >
+        <DialogTitle id="delete-product-title">Eliminar producto</DialogTitle>
+        <DialogContent>
+          {deleteProduct.isError && <Alert severity="error">{deleteProduct.error.message}</Alert>}
+          ¿Estás seguro de que deseas eliminar {deletingProduct?.name}?
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button type="button" onClick={closeDeleteDialog} disabled={deleteProduct.isPending}>
+            Cancelar
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={deleteProduct.isPending}
+            onClick={() => {
+              if (deletingProduct) {
+                deleteProduct.mutate(deletingProduct.id, {
+                  onSuccess: () => setDeletingProduct(null),
+                });
+              }
+            }}
+          >
+            {deleteProduct.isPending ? 'Eliminando...' : 'Eliminar'}
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );
