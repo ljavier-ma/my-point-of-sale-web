@@ -48,7 +48,7 @@ function Navigation({
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Toolbar>
         <Typography variant="h6" component="div">
-          Point of Sale
+          Punto de venta
         </Typography>
       </Toolbar>
       <List>
