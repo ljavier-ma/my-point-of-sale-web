@@ -73,7 +73,7 @@ function Navigation({
           <ListItemIcon>
             <Inventory2OutlinedIcon />
           </ListItemIcon>
-          <ListItemText primary="Products" />
+          <ListItemText primary="Productos" />
         </ListItemButton>
       </List>
       <Box sx={{ mt: 'auto', p: 2 }}>

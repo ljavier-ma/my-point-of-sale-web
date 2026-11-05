@@ -1,6 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { User } from 'firebase/auth';
-import { getProducts, type PaginatedProducts } from './products-service';
+import {
+  createProduct,
+  getProducts,
+  type NewProduct,
+  type PaginatedProducts,
+} from './products-service';
 
 export const DEFAULT_PRODUCTS_PAGE_SIZE = 50;
 
@@ -22,6 +27,24 @@ export function useProducts(user: User | null, offset: number, limit = DEFAULT_P
 
       const token = await user.getIdToken();
       return getProducts(token, offset, limit, signal);
+    },
+  });
+}
+
+export function useCreateProduct(user: User | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, NewProduct>({
+    mutationFn: async (product) => {
+      if (!user) {
+        throw new Error('A signed-in user is required to create a product.');
+      }
+
+      const token = await user.getIdToken();
+      await createProduct(token, product);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: productQueryKeys.all });
     },
   });
 }

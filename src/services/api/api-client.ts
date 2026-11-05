@@ -17,3 +17,23 @@ export async function getAuthenticatedJson(
 
   return response.json();
 }
+
+export async function postAuthenticatedJson(
+  url: string,
+  token: string,
+  body: unknown
+): Promise<void> {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}.`);
+  }
+}
