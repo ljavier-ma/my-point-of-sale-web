@@ -1,19 +1,49 @@
 'use client';
 
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import LightModeIcon from '@mui/icons-material/LightMode';
 import CssBaseline from '@mui/material/CssBaseline';
-import IconButton from '@mui/material/IconButton';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
 import { ThemeProvider, type PaletteMode } from '@mui/material/styles';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createAppTheme } from '../theme';
+
+const themeStorageKey = 'my-point-of-sale-theme';
+
+const ThemeModeContext = createContext<{
+  mode: PaletteMode;
+  toggleMode: () => void;
+} | null>(null);
+
+export function useThemeMode() {
+  const context = useContext(ThemeModeContext);
+  if (!context) {
+    throw new Error('useThemeMode must be used within the theme mode provider.');
+  }
+  return context;
+}
 
 export default function Providers({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<PaletteMode>('light');
+  const [hasLoadedTheme, setHasLoadedTheme] = useState(false);
   const theme = useMemo(() => createAppTheme(mode), [mode]);
+
+  useEffect(() => {
+    const storedMode = localStorage.getItem(themeStorageKey);
+    if (storedMode === 'light' || storedMode === 'dark') {
+      setMode(storedMode);
+    }
+    setHasLoadedTheme(true);
+  }, []);
+
+  useEffect(() => {
+    if (hasLoadedTheme) {
+      localStorage.setItem(themeStorageKey, mode);
+    }
+  }, [hasLoadedTheme, mode]);
+
+  const toggleMode = () => {
+    setMode((currentMode) => (currentMode === 'light' ? 'dark' : 'light'));
+  };
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -31,20 +61,9 @@ export default function Providers({ children }: { children: ReactNode }) {
       <ThemeProvider theme={theme}>
         <QueryClientProvider client={queryClient}>
           <CssBaseline />
-          <IconButton
-            aria-label={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}
-            color="inherit"
-            onClick={() => setMode((currentMode) => (currentMode === 'light' ? 'dark' : 'light'))}
-            sx={{
-              position: 'fixed',
-              top: 16,
-              right: 16,
-              zIndex: (currentTheme) => currentTheme.zIndex.tooltip,
-            }}
-          >
-            {mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
-          </IconButton>
-          {children}
+          <ThemeModeContext.Provider value={{ mode, toggleMode }}>
+            {children}
+          </ThemeModeContext.Provider>
         </QueryClientProvider>
       </ThemeProvider>
     </AppRouterCacheProvider>

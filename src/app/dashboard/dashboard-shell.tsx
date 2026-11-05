@@ -1,7 +1,9 @@
 'use client';
 
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import LightModeIcon from '@mui/icons-material/LightMode';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
 import Alert from '@mui/material/Alert';
@@ -22,6 +24,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { getFirebaseAuth } from '../../lib/firebase';
+import { useThemeMode } from '../providers';
 
 const drawerWidth = 264;
 const DashboardUserContext = createContext<User | null>(null);
@@ -44,6 +47,7 @@ function Navigation({
   logoutError: string | null;
 }) {
   const pathname = usePathname();
+  const { mode, toggleMode } = useThemeMode();
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -82,6 +86,16 @@ function Navigation({
             {logoutError}
           </Alert>
         )}
+        <Button
+          fullWidth
+          color="inherit"
+          type="button"
+          onClick={toggleMode}
+          startIcon={mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
+          sx={{ justifyContent: 'flex-start', py: 1.25, px: 1.5, mb: 1 }}
+        >
+          Cambiar tema
+        </Button>
         <Button
           fullWidth
           color="inherit"
