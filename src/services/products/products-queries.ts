@@ -1,8 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { User } from 'firebase/auth';
 import {
   createProduct,
   deleteProduct,
+  getProductName,
   getProducts,
   type NewProduct,
   type PaginatedProducts,
@@ -14,9 +15,28 @@ export const DEFAULT_PRODUCTS_PAGE_SIZE = 50;
 
 export const productQueryKeys = {
   all: ['products'] as const,
+  detail: (userId: string, productId: string) =>
+    [...productQueryKeys.all, userId, 'detail', productId] as const,
   page: (userId: string, offset: number, limit: number) =>
     [...productQueryKeys.all, userId, { offset, limit }] as const,
 };
+
+export function useProductNames(user: User | null, productIds: string[]) {
+  return useQueries({
+    queries: productIds.map((productId) => ({
+      queryKey: productQueryKeys.detail(user?.uid ?? '', productId),
+      enabled: Boolean(user),
+      queryFn: async ({ signal }: { signal: AbortSignal }) => {
+        if (!user) {
+          throw new Error('A signed-in user is required to load a product.');
+        }
+
+        const token = await user.getIdToken();
+        return getProductName(token, productId, signal);
+      },
+    })),
+  });
+}
 
 export function useProducts(user: User | null, offset: number, limit = DEFAULT_PRODUCTS_PAGE_SIZE) {
   return useQuery<PaginatedProducts, Error>({
