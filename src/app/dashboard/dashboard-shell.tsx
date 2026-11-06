@@ -1,6 +1,7 @@
 'use client';
 
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import LightModeIcon from '@mui/icons-material/LightMode';
@@ -78,6 +79,17 @@ function Navigation({
             <Inventory2OutlinedIcon />
           </ListItemIcon>
           <ListItemText primary="Productos" />
+        </ListItemButton>
+        <ListItemButton
+          component={Link}
+          href="/dashboard/movements"
+          selected={pathname === '/dashboard/movements'}
+          onClick={onNavigate}
+        >
+          <ListItemIcon>
+            <AttachMoneyIcon />
+          </ListItemIcon>
+          <ListItemText primary="Movimientos" />
         </ListItemButton>
       </List>
       <Box sx={{ mt: 'auto', p: 2 }}>

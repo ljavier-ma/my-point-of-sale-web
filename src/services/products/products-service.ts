@@ -59,6 +59,31 @@ export async function deleteProduct(token: string, id: string): Promise<void> {
   await deleteAuthenticated(`${productsEndpoint}/${encodeURIComponent(id)}`, token);
 }
 
+export async function getProductName(
+  token: string,
+  id: string,
+  signal?: AbortSignal
+): Promise<string> {
+  const response = await getAuthenticatedJson(
+    `${productsEndpoint}/${encodeURIComponent(id)}`,
+    token,
+    signal
+  );
+
+  if (
+    typeof response !== 'object' ||
+    response === null ||
+    !('id' in response) ||
+    response.id !== id ||
+    !('name' in response) ||
+    typeof response.name !== 'string'
+  ) {
+    throw new Error('The product response has an invalid format.');
+  }
+
+  return response.name;
+}
+
 export async function getProducts(
   token: string,
   offset: number,
