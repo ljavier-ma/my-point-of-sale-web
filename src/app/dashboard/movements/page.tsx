@@ -148,8 +148,13 @@ export default function MovementsPage() {
                                 ))
                               : '—'}
                           </TableCell>
-                          <TableCell align="right">
-                            $
+                          <TableCell
+                            align="right"
+                            sx={{
+                              color: movement.isMovementAPurchase ? 'error.main' : 'success.main',
+                            }}
+                          >
+                            {movement.isMovementAPurchase ? '-' : '+'}$
                             {total.toLocaleString(undefined, {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
