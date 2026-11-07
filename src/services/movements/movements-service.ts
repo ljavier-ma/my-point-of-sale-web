@@ -8,6 +8,7 @@ export interface MovementProductDetail {
 
 export interface Movement {
   id: string;
+  isMovementAPurchase: boolean;
   productDetails: MovementProductDetail[];
   time: {
     _seconds: number;
@@ -57,6 +58,8 @@ export async function getMovements(
       movement === null ||
       !('id' in movement) ||
       typeof movement.id !== 'string' ||
+      !('isMovementAPurchase' in movement) ||
+      typeof movement.isMovementAPurchase !== 'boolean' ||
       !('productDetails' in movement) ||
       !Array.isArray(movement.productDetails) ||
       !('time' in movement) ||
@@ -97,6 +100,7 @@ export async function getMovements(
 
     return {
       id: movement.id,
+      isMovementAPurchase: movement.isMovementAPurchase,
       productDetails,
       time: {
         _seconds: movement.time._seconds,
