@@ -41,6 +41,11 @@ export interface PaginatedProducts {
   totalOfProducts: number;
 }
 
+export interface ProductSearchResult {
+  id: string;
+  name: string;
+}
+
 const productsEndpoint = 'http://localhost:3000/products';
 
 export async function createProduct(token: string, product: NewProduct): Promise<void> {
@@ -82,6 +87,46 @@ export async function getProductName(
   }
 
   return response.name;
+}
+
+export async function searchProductsByName(
+  token: string,
+  name: string,
+  signal?: AbortSignal
+): Promise<ProductSearchResult[]> {
+  const searchParams = new URLSearchParams({ name });
+  const response = await getAuthenticatedJson(
+    `${productsEndpoint}/search?${searchParams.toString()}`,
+    token,
+    signal
+  );
+  const products = Array.isArray(response)
+    ? response
+    : typeof response === 'object' &&
+        response !== null &&
+        'products' in response &&
+        Array.isArray(response.products)
+      ? response.products
+      : null;
+
+  if (!products) {
+    throw new Error('The product search response has an invalid format.');
+  }
+
+  return products.map((product: unknown): ProductSearchResult => {
+    if (
+      typeof product !== 'object' ||
+      product === null ||
+      !('id' in product) ||
+      typeof product.id !== 'string' ||
+      !('name' in product) ||
+      typeof product.name !== 'string'
+    ) {
+      throw new Error('A product in the search response has an invalid format.');
+    }
+
+    return { id: product.id, name: product.name };
+  });
 }
 
 export async function getProducts(

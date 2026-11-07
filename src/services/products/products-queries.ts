@@ -5,8 +5,10 @@ import {
   deleteProduct,
   getProductName,
   getProducts,
+  searchProductsByName,
   type NewProduct,
   type PaginatedProducts,
+  type ProductSearchResult,
   type ProductFields,
   updateProduct,
 } from './products-service';
@@ -17,9 +19,26 @@ export const productQueryKeys = {
   all: ['products'] as const,
   detail: (userId: string, productId: string) =>
     [...productQueryKeys.all, userId, 'detail', productId] as const,
+  search: (userId: string, name: string) =>
+    [...productQueryKeys.all, userId, 'search', name] as const,
   page: (userId: string, offset: number, limit: number) =>
     [...productQueryKeys.all, userId, { offset, limit }] as const,
 };
+
+export function useSearchProducts(user: User | null, name: string, enabled = true) {
+  return useQuery<ProductSearchResult[], Error>({
+    queryKey: productQueryKeys.search(user?.uid ?? '', name),
+    enabled: Boolean(user) && enabled && name.trim().length >= 3,
+    queryFn: async ({ signal }) => {
+      if (!user) {
+        throw new Error('A signed-in user is required to search products.');
+      }
+
+      const token = await user.getIdToken();
+      return searchProductsByName(token, name.trim(), signal);
+    },
+  });
+}
 
 export function useProductNames(user: User | null, productIds: string[]) {
   return useQueries({

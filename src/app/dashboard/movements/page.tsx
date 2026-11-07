@@ -3,7 +3,13 @@
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
 import CircularProgress from '@mui/material/CircularProgress';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -12,14 +18,22 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   DEFAULT_MOVEMENTS_PAGE_SIZE,
+  useCreateMovement,
   useMovements,
 } from '../../../services/movements/movements-queries';
-import { useProductNames } from '../../../services/products/products-queries';
+import { useProductNames, useSearchProducts } from '../../../services/products/products-queries';
+import type { ProductSearchResult } from '../../../services/products/products-service';
 import { useDashboardUser } from '../dashboard-shell';
+
+interface SelectedProduct extends ProductSearchResult {
+  productTotal: string;
+  quantity: string;
+}
 
 function formatMovementDate(seconds: number, nanoseconds: number) {
   return new Date(seconds * 1000 + nanoseconds / 1_000_000).toLocaleString('es', {
@@ -35,12 +49,34 @@ export default function MovementsPage() {
   const user = useDashboardUser();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_MOVEMENTS_PAGE_SIZE);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isMovementAPurchase, setIsMovementAPurchase] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [debouncedSearchText, setDebouncedSearchText] = useState('');
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const offset = page * rowsPerPage;
   const { data, error, isError, isFetching, isPending, refetch } = useMovements(
     user,
     offset,
     rowsPerPage
   );
+  const createMovement = useCreateMovement(user);
+  const searchProducts = useSearchProducts(
+    user,
+    debouncedSearchText,
+    isCreateDialogOpen && searchText.trim() === debouncedSearchText
+  );
+  const areSelectedProductsComplete =
+    selectedProducts.length > 0 &&
+    selectedProducts.every(
+      (product) =>
+        product.productTotal.trim() !== '' &&
+        Number.isFinite(Number(product.productTotal)) &&
+        Number(product.productTotal) >= 0 &&
+        product.quantity.trim() !== '' &&
+        Number.isInteger(Number(product.quantity)) &&
+        Number(product.quantity) > 0
+    );
   const productIds = [
     ...new Set(
       (
@@ -59,11 +95,73 @@ export default function MovementsPage() {
   const productNameErrors = productNameQueries.filter((query) => query.isError);
   const isLoadingProductNames = productNameQueries.some((query) => query.isPending);
 
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearchText(searchText.trim());
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [searchText]);
+
+  function resetCreateMovementForm() {
+    setIsMovementAPurchase(false);
+    setSearchText('');
+    setDebouncedSearchText('');
+    setSelectedProducts([]);
+    createMovement.reset();
+  }
+
+  function closeCreateDialog() {
+    if (!createMovement.isPending) {
+      setIsCreateDialogOpen(false);
+      resetCreateMovementForm();
+    }
+  }
+
+  function addProduct(product: ProductSearchResult) {
+    setSelectedProducts((currentProducts) =>
+      currentProducts.some((selected) => selected.id === product.id)
+        ? currentProducts
+        : [...currentProducts, { ...product, productTotal: '', quantity: '' }]
+    );
+  }
+
+  function updateSelectedProduct(
+    productId: string,
+    field: 'productTotal' | 'quantity',
+    value: string
+  ) {
+    setSelectedProducts((currentProducts) =>
+      currentProducts.map((product) =>
+        product.id === productId ? { ...product, [field]: value } : product
+      )
+    );
+  }
+
   return (
     <Box>
-      <Typography component="h1" variant="h4" sx={{ mb: 3 }}>
-        Movimientos
-      </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 2,
+          mb: 3,
+        }}
+      >
+        <Typography component="h1" variant="h4">
+          Movimientos
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => {
+            resetCreateMovementForm();
+            setIsCreateDialogOpen(true);
+          }}
+        >
+          Crear movimiento
+        </Button>
+      </Box>
 
       {isError && (
         <Alert
@@ -199,6 +297,188 @@ export default function MovementsPage() {
           </Paper>
         </>
       )}
+
+      <Dialog
+        open={isCreateDialogOpen}
+        onClose={closeCreateDialog}
+        fullWidth
+        maxWidth="sm"
+        aria-labelledby="create-movement-title"
+      >
+        <Box
+          component="form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!areSelectedProductsComplete) {
+              return;
+            }
+
+            createMovement.mutate(
+              {
+                isMovementAPurchase,
+                productDetails: selectedProducts.map((product) => ({
+                  productTotal: Number(product.productTotal),
+                  productId: product.id,
+                  quantity: Number(product.quantity),
+                })),
+              },
+              {
+                onSuccess: () => {
+                  setIsCreateDialogOpen(false);
+                  resetCreateMovementForm();
+                },
+              }
+            );
+          }}
+        >
+          <DialogTitle id="create-movement-title">Crear movimiento</DialogTitle>
+          <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
+            {createMovement.isError && (
+              <Alert severity="error">{createMovement.error.message}</Alert>
+            )}
+
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="isMovementAPurchase"
+                  checked={isMovementAPurchase}
+                  onChange={(event) => setIsMovementAPurchase(event.target.checked)}
+                />
+              }
+              label="El movimiento es una compra"
+            />
+
+            <TextField
+              autoFocus
+              label="Buscar productos"
+              type="text"
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                }
+              }}
+              helperText="Ingresa al menos tres caracteres para buscar productos."
+            />
+
+            {searchText.trim().length >= 3 && searchText.trim() === debouncedSearchText && (
+              <Paper variant="outlined" sx={{ p: 2, maxHeight: 240, overflowY: 'auto' }}>
+                {searchProducts.isPending ? (
+                  <CircularProgress size={24} aria-label="Buscando productos" />
+                ) : searchProducts.isError ? (
+                  <Alert
+                    severity="error"
+                    action={
+                      <Button
+                        type="button"
+                        color="inherit"
+                        size="small"
+                        onClick={() => void searchProducts.refetch()}
+                      >
+                        Reintentar
+                      </Button>
+                    }
+                  >
+                    {searchProducts.error.message}
+                  </Alert>
+                ) : searchProducts.data?.length ? (
+                  <Box sx={{ display: 'grid', gap: 1 }}>
+                    {searchProducts.data.map((product) => {
+                      const isSelected = selectedProducts.some(
+                        (selected) => selected.id === product.id
+                      );
+
+                      return (
+                        <Box
+                          key={product.id}
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 2,
+                          }}
+                        >
+                          <Typography>{product.name}</Typography>
+                          <Button
+                            type="button"
+                            size="small"
+                            disabled={isSelected}
+                            onClick={() => addProduct(product)}
+                          >
+                            {isSelected ? 'Agregado' : 'Agregar producto'}
+                          </Button>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                ) : (
+                  <Typography color="text.secondary">No se encontraron productos.</Typography>
+                )}
+              </Paper>
+            )}
+
+            {selectedProducts.map((product) => (
+              <Paper key={product.id} variant="outlined" sx={{ display: 'grid', gap: 2, p: 2 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 2,
+                  }}
+                >
+                  <Typography>{product.name}</Typography>
+                  <Button
+                    type="button"
+                    size="small"
+                    color="error"
+                    onClick={() =>
+                      setSelectedProducts((currentProducts) =>
+                        currentProducts.filter((selected) => selected.id !== product.id)
+                      )
+                    }
+                  >
+                    Quitar
+                  </Button>
+                </Box>
+                <TextField
+                  required
+                  label="Total"
+                  type="number"
+                  value={product.productTotal}
+                  onChange={(event) =>
+                    updateSelectedProduct(product.id, 'productTotal', event.target.value)
+                  }
+                  slotProps={{ htmlInput: { min: 0, step: 'any' } }}
+                />
+                <TextField
+                  required
+                  label="Cantidad"
+                  type="number"
+                  value={product.quantity}
+                  onChange={(event) =>
+                    updateSelectedProduct(product.id, 'quantity', event.target.value)
+                  }
+                  slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                />
+              </Paper>
+            ))}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button type="button" onClick={closeCreateDialog} disabled={createMovement.isPending}>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={createMovement.isPending || !areSelectedProductsComplete}
+            >
+              {createMovement.isPending ? 'Creando...' : 'Crear movimiento'}
+            </Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
     </Box>
   );
 }

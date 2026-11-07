@@ -1,6 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { User } from 'firebase/auth';
-import { getMovements, type PaginatedMovements } from './movements-service';
+import {
+  createMovement,
+  getMovements,
+  type NewMovement,
+  type PaginatedMovements,
+} from './movements-service';
 
 export const DEFAULT_MOVEMENTS_PAGE_SIZE = 50;
 
@@ -9,6 +14,24 @@ export const movementQueryKeys = {
   page: (userId: string, offset: number, limit: number) =>
     [...movementQueryKeys.all, userId, { offset, limit }] as const,
 };
+
+export function useCreateMovement(user: User | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, NewMovement>({
+    mutationFn: async (movement) => {
+      if (!user) {
+        throw new Error('A signed-in user is required to create a movement.');
+      }
+
+      const token = await user.getIdToken();
+      await createMovement(token, movement);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: movementQueryKeys.all });
+    },
+  });
+}
 
 export function useMovements(
   user: User | null,
