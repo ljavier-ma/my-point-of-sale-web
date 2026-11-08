@@ -42,6 +42,7 @@ export interface PaginatedProducts {
 }
 
 export type ProductsBelowIdeal = Product[];
+export type ProductsWithLowQuantity = Product[];
 
 export interface ProductSearchResult {
   id: string;
@@ -169,6 +170,14 @@ export async function getProductsBelowIdeal(
   signal?: AbortSignal
 ): Promise<ProductsBelowIdeal> {
   const response = await getAuthenticatedJson(`${productsEndpoint}/bellowIdeal`, token, signal);
+  return parseProducts(response);
+}
+
+export async function getProductsWithLowQuantity(
+  token: string,
+  signal?: AbortSignal
+): Promise<ProductsWithLowQuantity> {
+  const response = await getAuthenticatedJson(`${productsEndpoint}/lowQuantity`, token, signal);
   return parseProducts(response);
 }
 
