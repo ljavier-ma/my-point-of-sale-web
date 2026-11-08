@@ -5,9 +5,11 @@ import {
   deleteProduct,
   getProductName,
   getProducts,
+  getProductsBelowIdeal,
   searchProductsByName,
   type NewProduct,
   type PaginatedProducts,
+  type ProductsBelowIdeal,
   type ProductSearchResult,
   type ProductFields,
   updateProduct,
@@ -19,6 +21,7 @@ export const productQueryKeys = {
   all: ['products'] as const,
   detail: (userId: string, productId: string) =>
     [...productQueryKeys.all, userId, 'detail', productId] as const,
+  belowIdeal: (userId: string) => [...productQueryKeys.all, userId, 'belowIdeal'] as const,
   search: (userId: string, name: string) =>
     [...productQueryKeys.all, userId, 'search', name] as const,
   page: (userId: string, offset: number, limit: number) =>
@@ -69,6 +72,21 @@ export function useProducts(user: User | null, offset: number, limit = DEFAULT_P
 
       const token = await user.getIdToken();
       return getProducts(token, offset, limit, signal);
+    },
+  });
+}
+
+export function useProductsBelowIdeal(user: User | null) {
+  return useQuery<ProductsBelowIdeal, Error>({
+    queryKey: productQueryKeys.belowIdeal(user?.uid ?? ''),
+    enabled: Boolean(user),
+    queryFn: async ({ signal }) => {
+      if (!user) {
+        throw new Error('A signed-in user is required to load products.');
+      }
+
+      const token = await user.getIdToken();
+      return getProductsBelowIdeal(token, signal);
     },
   });
 }
