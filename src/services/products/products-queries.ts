@@ -6,10 +6,12 @@ import {
   getProductName,
   getProducts,
   getProductsBelowIdeal,
+  getProductsWithLowQuantity,
   searchProductsByName,
   type NewProduct,
   type PaginatedProducts,
   type ProductsBelowIdeal,
+  type ProductsWithLowQuantity,
   type ProductSearchResult,
   type ProductFields,
   updateProduct,
@@ -22,6 +24,7 @@ export const productQueryKeys = {
   detail: (userId: string, productId: string) =>
     [...productQueryKeys.all, userId, 'detail', productId] as const,
   belowIdeal: (userId: string) => [...productQueryKeys.all, userId, 'belowIdeal'] as const,
+  lowQuantity: (userId: string) => [...productQueryKeys.all, userId, 'lowQuantity'] as const,
   search: (userId: string, name: string) =>
     [...productQueryKeys.all, userId, 'search', name] as const,
   page: (userId: string, offset: number, limit: number) =>
@@ -87,6 +90,21 @@ export function useProductsBelowIdeal(user: User | null) {
 
       const token = await user.getIdToken();
       return getProductsBelowIdeal(token, signal);
+    },
+  });
+}
+
+export function useProductsWithLowQuantity(user: User | null) {
+  return useQuery<ProductsWithLowQuantity, Error>({
+    queryKey: productQueryKeys.lowQuantity(user?.uid ?? ''),
+    enabled: Boolean(user),
+    queryFn: async ({ signal }) => {
+      if (!user) {
+        throw new Error('A signed-in user is required to load products.');
+      }
+
+      const token = await user.getIdToken();
+      return getProductsWithLowQuantity(token, signal);
     },
   });
 }
