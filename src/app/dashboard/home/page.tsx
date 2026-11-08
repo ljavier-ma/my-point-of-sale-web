@@ -1,5 +1,7 @@
 'use client';
 
+import PersonIcon from '@mui/icons-material/Person';
+import StoreOutlinedIcon from '@mui/icons-material/StoreOutlined';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -14,7 +16,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useDashboardUser } from '../dashboard-shell';
-import { useUserProfile } from '../../../services/user/user-queries';
+import { useUserProfile, useUserStore } from '../../../services/user/user-queries';
 import {
   useProductsBelowIdeal,
   useProductsWithLowQuantity,
@@ -26,7 +28,16 @@ export default function DashboardHomePage() {
     data: profile,
     error: profileError,
     isPending: isProfilePending,
+    isError: isProfileError,
+    refetch: refetchProfile,
   } = useUserProfile(user);
+  const {
+    data: store,
+    error: storeError,
+    isError: isStoreError,
+    isPending: isStorePending,
+    refetch: refetchStore,
+  } = useUserStore(user);
   const {
     data: products,
     error: productsError,
@@ -48,14 +59,54 @@ export default function DashboardHomePage() {
     <Box>
       {isProfilePending ? (
         <CircularProgress aria-label="Loading user name" />
-      ) : profileError ? (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {profileError.message}
-        </Alert>
       ) : (
-        <Typography component="h1" variant="h4" sx={{ mb: 3 }}>
-          ¡Hola, {profile.name}!
-        </Typography>
+        <Box sx={{ mb: 3 }}>
+          {isProfileError ? (
+            <Alert
+              severity="error"
+              action={
+                <Button color="inherit" size="small" onClick={() => void refetchProfile()}>
+                  Reintentar
+                </Button>
+              }
+              sx={{ mb: 1 }}
+            >
+              {profileError.message}
+            </Alert>
+          ) : (
+            <Typography
+              component="h1"
+              variant="h4"
+              sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+            >
+              <PersonIcon aria-hidden="true" />
+              ¡Hola, {profile.name}!
+            </Typography>
+          )}
+          {isStorePending ? (
+            <CircularProgress aria-label="Loading store name" size={20} sx={{ mt: 1 }} />
+          ) : isStoreError ? (
+            <Alert
+              severity="error"
+              action={
+                <Button color="inherit" size="small" onClick={() => void refetchStore()}>
+                  Reintentar
+                </Button>
+              }
+              sx={{ mt: 1 }}
+            >
+              {storeError.message}
+            </Alert>
+          ) : (
+            <Typography
+              variant="subtitle1"
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}
+            >
+              <StoreOutlinedIcon aria-hidden="true" />
+              {store.name}
+            </Typography>
+          )}
+        </Box>
       )}
 
       <Typography
