@@ -4,6 +4,7 @@ import {
   patchAuthenticatedJson,
   postAuthenticatedJson,
 } from '../api/api-client';
+import { API_BASE_URL } from '../api/api-config';
 
 export interface Product {
   id: string;
@@ -49,7 +50,7 @@ export interface ProductSearchResult {
   name: string;
 }
 
-const productsEndpoint = 'http://localhost:3000/products';
+const productsEndpoint = `${API_BASE_URL}/products`;
 
 export async function createProduct(token: string, product: NewProduct): Promise<void> {
   await postAuthenticatedJson(productsEndpoint, token, product);

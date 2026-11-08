@@ -1,4 +1,5 @@
 import { getAuthenticatedJson, postAuthenticatedJson } from '../api/api-client';
+import { API_BASE_URL } from '../api/api-config';
 
 export interface MovementProductDetail {
   productTotal: number;
@@ -26,7 +27,7 @@ export interface NewMovement {
   isMovementAPurchase: boolean;
 }
 
-const movementsEndpoint = 'http://localhost:3000/movements';
+const movementsEndpoint = `${API_BASE_URL}/movements`;
 
 export async function createMovement(token: string, movement: NewMovement): Promise<void> {
   await postAuthenticatedJson(movementsEndpoint, token, movement);

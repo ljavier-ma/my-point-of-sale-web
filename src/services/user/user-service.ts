@@ -1,4 +1,5 @@
 import { getAuthenticatedJson } from '../api/api-client';
+import { API_BASE_URL } from '../api/api-config';
 
 export interface UserProfile {
   name: string;
@@ -9,8 +10,8 @@ export interface UserStore {
   name: string;
 }
 
-const userEndpoint = 'http://localhost:3000/user';
-const storeEndpoint = 'http://localhost:3000/store';
+const userEndpoint = `${API_BASE_URL}/user`;
+const storeEndpoint = `${API_BASE_URL}/store`;
 
 export async function getUserProfile(token: string, signal?: AbortSignal): Promise<UserProfile> {
   const response = await getAuthenticatedJson(userEndpoint, token, signal);
