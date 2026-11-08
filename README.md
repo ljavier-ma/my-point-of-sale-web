@@ -20,6 +20,21 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Firebase authentication
+
+The root route checks the Firebase authentication state and redirects signed-in users to `/dashboard` and signed-out users to `/login`.
+
+Copy `.env.example` to `.env.local` and fill in the Firebase web app values from your Firebase project settings:
+
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+```
+
+Restart the development server after changing environment variables.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
