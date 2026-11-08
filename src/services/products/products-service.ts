@@ -41,6 +41,8 @@ export interface PaginatedProducts {
   totalOfProducts: number;
 }
 
+export type ProductsBelowIdeal = Product[];
+
 export interface ProductSearchResult {
   id: string;
   name: string;
@@ -148,8 +150,6 @@ export async function getProducts(
   if (
     typeof response !== 'object' ||
     response === null ||
-    !('products' in response) ||
-    !Array.isArray(response.products) ||
     !('totalOfProducts' in response) ||
     typeof response.totalOfProducts !== 'number' ||
     !Number.isInteger(response.totalOfProducts) ||
@@ -158,7 +158,31 @@ export async function getProducts(
     throw new Error('The products response has an invalid format.');
   }
 
-  const products = response.products.map((product): Product => {
+  return {
+    products: parseProducts(response),
+    totalOfProducts: response.totalOfProducts,
+  };
+}
+
+export async function getProductsBelowIdeal(
+  token: string,
+  signal?: AbortSignal
+): Promise<ProductsBelowIdeal> {
+  const response = await getAuthenticatedJson(`${productsEndpoint}/bellowIdeal`, token, signal);
+  return parseProducts(response);
+}
+
+function parseProducts(response: unknown): Product[] {
+  if (
+    typeof response !== 'object' ||
+    response === null ||
+    !('products' in response) ||
+    !Array.isArray(response.products)
+  ) {
+    throw new Error('The products response has an invalid format.');
+  }
+
+  return response.products.map((product): Product => {
     if (typeof product !== 'object' || product === null) {
       throw new Error('A product in the response has an invalid format.');
     }
@@ -196,9 +220,4 @@ export async function getProducts(
       lowQuantity,
     };
   });
-
-  return {
-    products,
-    totalOfProducts: response.totalOfProducts,
-  };
 }
