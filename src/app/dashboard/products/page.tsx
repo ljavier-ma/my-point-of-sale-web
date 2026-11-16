@@ -198,7 +198,6 @@ export default function ProductsPage() {
                 <TableHead>
                   <TableRow>
                     <TableCell>Nombre</TableCell>
-                    <TableCell>Código</TableCell>
                     <TableCell align="right">Existencia</TableCell>
                     <TableCell align="right">Precio unitario</TableCell>
                     <TableCell align="right" aria-label="Acciones" />
@@ -209,7 +208,6 @@ export default function ProductsPage() {
                     data.products.map((product) => (
                       <TableRow key={product.id}>
                         <TableCell>{product.name}</TableCell>
-                        <TableCell>{product.code ?? '—'}</TableCell>
                         <TableCell align="right">{product.stock ?? '—'}</TableCell>
                         <TableCell align="right">
                           {product.unitaryPrice === null
@@ -235,7 +233,7 @@ export default function ProductsPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} align="center">
+                      <TableCell colSpan={4} align="center">
                         No hay productos para mostrar.
                       </TableCell>
                     </TableRow>
