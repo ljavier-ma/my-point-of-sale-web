@@ -89,23 +89,20 @@ function ProductInputFields({ product }: { product?: Product | null }) {
 }
 
 function getProductFields(formData: FormData): ProductFields {
-  const optionalString = (fieldName: string) => {
+  const stringField = (fieldName: string) => String(formData.get(fieldName) ?? '').trim();
+  const numberField = (fieldName: string) => {
     const value = String(formData.get(fieldName) ?? '').trim();
-    return value || null;
-  };
-  const optionalNumber = (fieldName: string) => {
-    const value = String(formData.get(fieldName) ?? '').trim();
-    return value ? Number(value) : null;
+    return value ? Number(value) : 0;
   };
 
   return {
-    name: String(formData.get('name') ?? '').trim(),
-    code: optionalString('code'),
-    barcode: optionalString('barcode'),
-    unitaryPrice: optionalNumber('unitaryPrice'),
-    stock: optionalNumber('stock'),
-    idealAmount: optionalNumber('idealAmount'),
-    lowQuantity: optionalNumber('lowQuantity'),
+    name: stringField('name'),
+    code: stringField('code'),
+    barcode: stringField('barcode'),
+    unitaryPrice: numberField('unitaryPrice'),
+    stock: numberField('stock'),
+    idealAmount: numberField('idealAmount'),
+    lowQuantity: numberField('lowQuantity'),
   };
 }
 
@@ -285,25 +282,9 @@ export default function ProductsPage() {
           onSubmit={(event) => {
             event.preventDefault();
             const formData = new FormData(event.currentTarget);
-            const optionalString = (fieldName: string) => {
-              const value = String(formData.get(fieldName) ?? '').trim();
-              return value || undefined;
-            };
-            const optionalNumber = (fieldName: string) => {
-              const value = String(formData.get(fieldName) ?? '').trim();
-              return value ? Number(value) : undefined;
-            };
 
             createProduct.mutate(
-              {
-                name: String(formData.get('name')).trim(),
-                code: optionalString('code'),
-                barcode: optionalString('barcode'),
-                stock: optionalNumber('stock'),
-                unitaryPrice: optionalNumber('unitaryPrice'),
-                idealAmount: optionalNumber('idealAmount'),
-                lowQuantity: optionalNumber('lowQuantity'),
-              },
+              getProductFields(formData),
               {
                 onSuccess: () => setIsCreateDialogOpen(false),
               }

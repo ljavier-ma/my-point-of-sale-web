@@ -19,23 +19,15 @@ export interface Product {
 
 export interface ProductFields {
   name: string;
-  code: string | null;
-  barcode: string | null;
-  stock: number | null;
-  unitaryPrice: number | null;
-  idealAmount: number | null;
-  lowQuantity: number | null;
+  code: string;
+  barcode: string;
+  stock: number;
+  unitaryPrice: number;
+  idealAmount: number;
+  lowQuantity: number;
 }
 
-export interface NewProduct {
-  name: string;
-  code?: string;
-  barcode?: string;
-  stock?: number;
-  unitaryPrice?: number;
-  idealAmount?: number;
-  lowQuantity?: number;
-}
+export type NewProduct = ProductFields;
 
 export interface PaginatedProducts {
   products: Product[];
