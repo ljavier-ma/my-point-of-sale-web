@@ -336,7 +336,6 @@ export default function DashboardHomePage() {
                     <TableCell>Nombre</TableCell>
                     <TableCell>Código</TableCell>
                     <TableCell align="right">Existencia</TableCell>
-                    <TableCell align="right">Cantidad ideal</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -346,18 +345,17 @@ export default function DashboardHomePage() {
                         <TableCell>{product.name}</TableCell>
                         <TableCell>{product.code ?? '—'}</TableCell>
                         <TableCell align="right">{product.stock ?? '—'}</TableCell>
-                        <TableCell align="right">{product.idealAmount ?? '—'}</TableCell>
                       </TableRow>
                     ))
                   ) : isProductsError ? (
                     <TableRow>
-                      <TableCell colSpan={4} align="center">
+                      <TableCell colSpan={3} align="center">
                         No se pudieron cargar los productos.
                       </TableCell>
                     </TableRow>
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} align="center">
+                      <TableCell colSpan={3} align="center">
                         No hay productos por debajo de la cantidad ideal.
                       </TableCell>
                     </TableRow>
@@ -419,7 +417,6 @@ export default function DashboardHomePage() {
                     <TableCell>Nombre</TableCell>
                     <TableCell>Código</TableCell>
                     <TableCell align="right">Existencia</TableCell>
-                    <TableCell align="right">Cantidad baja</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -429,18 +426,17 @@ export default function DashboardHomePage() {
                         <TableCell>{product.name}</TableCell>
                         <TableCell>{product.code ?? '—'}</TableCell>
                         <TableCell align="right">{product.stock ?? '—'}</TableCell>
-                        <TableCell align="right">{product.lowQuantity ?? '—'}</TableCell>
                       </TableRow>
                     ))
                   ) : isLowQuantityError ? (
                     <TableRow>
-                      <TableCell colSpan={4} align="center">
+                      <TableCell colSpan={3} align="center">
                         No se pudieron cargar los productos.
                       </TableCell>
                     </TableRow>
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} align="center">
+                      <TableCell colSpan={3} align="center">
                         No hay productos con cantidad baja.
                       </TableCell>
                     </TableRow>
