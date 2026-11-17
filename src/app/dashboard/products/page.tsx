@@ -238,7 +238,7 @@ export default function ProductsPage() {
               count={data?.totalOfProducts ?? 0}
               page={page}
               rowsPerPage={rowsPerPage}
-              rowsPerPageOptions={[10, 25, 50, 100]}
+              rowsPerPageOptions={[25, 50]}
               onPageChange={(_, selectedPage) => setPage(selectedPage)}
               onRowsPerPageChange={(event) => {
                 setRowsPerPage(Number.parseInt(event.target.value, 10));
