@@ -23,6 +23,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { useDashboardUser } from '../dashboard-shell';
 import {
   DEFAULT_PRODUCTS_PAGE_SIZE,
@@ -31,6 +32,7 @@ import {
   useProducts,
   useUpdateProduct,
 } from '../../../services/products/products-queries';
+import { useUserStore } from '../../../services/user/user-queries';
 import type { Product, ProductFields } from '../../../services/products/products-service';
 
 function ProductInputFields({ product }: { product?: Product | null }) {
@@ -98,8 +100,31 @@ function getProductFields(formData: FormData): ProductFields {
   };
 }
 
+function getStockWarningColor(
+  product: Product,
+  idealPercentage: number,
+  lowPercentage: number
+): 'warning' | 'error' | null {
+  if (product.stock === null || product.baseStockAmount === null || product.baseStockAmount <= 0) {
+    return null;
+  }
+
+  const stockPercentage = (product.stock / product.baseStockAmount) * 100;
+
+  if (stockPercentage < lowPercentage) {
+    return 'error';
+  }
+
+  if (stockPercentage < idealPercentage) {
+    return 'warning';
+  }
+
+  return null;
+}
+
 export default function ProductsPage() {
   const user = useDashboardUser();
+  const { data: store } = useUserStore(user);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PRODUCTS_PAGE_SIZE);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -197,32 +222,57 @@ export default function ProductsPage() {
                 </TableHead>
                 <TableBody>
                   {data?.products.length ? (
-                    data.products.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell>{product.name}</TableCell>
-                        <TableCell align="right">{product.stock ?? '—'}</TableCell>
-                        <TableCell align="right">
-                          {product.unitaryPrice === null
-                            ? '—'
-                            : product.unitaryPrice.toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}
-                        </TableCell>
-                        <TableCell align="right" padding="checkbox">
-                          <IconButton
-                            aria-label={`Opciones de ${product.name}`}
-                            aria-haspopup="menu"
-                            onClick={(event) => {
-                              setMenuProduct(product);
-                              setMenuAnchorEl(event.currentTarget);
-                            }}
-                          >
-                            <MoreVertIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    data.products.map((product) => {
+                      const warningColor = store
+                        ? getStockWarningColor(
+                            product,
+                            store.settings.idealPercentageOfProduct,
+                            store.settings.lowPercentageOfProduct
+                          )
+                        : null;
+
+                      return (
+                        <TableRow key={product.id}>
+                          <TableCell>{product.name}</TableCell>
+                          <TableCell align="right">
+                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                              {warningColor && (
+                                <WarningAmberIcon
+                                  color={warningColor}
+                                  fontSize="small"
+                                  aria-label={
+                                    warningColor === 'error'
+                                      ? 'Existencia baja'
+                                      : 'Existencia por debajo del ideal'
+                                  }
+                                />
+                              )}
+                              <span>{product.stock ?? '—'}</span>
+                            </Box>
+                          </TableCell>
+                          <TableCell align="right">
+                            {product.unitaryPrice === null
+                              ? '—'
+                              : product.unitaryPrice.toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                          </TableCell>
+                          <TableCell align="right" padding="checkbox">
+                            <IconButton
+                              aria-label={`Opciones de ${product.name}`}
+                              aria-haspopup="menu"
+                              onClick={(event) => {
+                                setMenuProduct(product);
+                                setMenuAnchorEl(event.currentTarget);
+                              }}
+                            >
+                              <MoreVertIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   ) : (
                     <TableRow>
                       <TableCell colSpan={4} align="center">
