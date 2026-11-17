@@ -70,6 +70,13 @@ function ProductInputFields({ product }: { product?: Product | null }) {
         defaultValue={product?.stock ?? ''}
         slotProps={{ htmlInput: { min: 0, step: 1 } }}
       />
+      <TextField
+        name="baseStockAmount"
+        label="Cantidad base"
+        type="number"
+        defaultValue={product?.baseStockAmount ?? ''}
+        slotProps={{ htmlInput: { min: 0, step: 1 } }}
+      />
     </>
   );
 }
@@ -87,6 +94,7 @@ function getProductFields(formData: FormData): ProductFields {
     barcode: stringField('barcode'),
     unitaryPrice: numberField('unitaryPrice'),
     stock: numberField('stock'),
+    baseStockAmount: numberField('baseStockAmount'),
   };
 }
 

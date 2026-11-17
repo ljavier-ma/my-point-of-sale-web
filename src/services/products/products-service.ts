@@ -13,6 +13,7 @@ export interface Product {
   barcode: string | null;
   stock: number | null;
   unitaryPrice: number | null;
+  baseStockAmount: number | null;
 }
 
 export interface ProductFields {
@@ -21,6 +22,7 @@ export interface ProductFields {
   barcode: string;
   stock: number;
   unitaryPrice: number;
+  baseStockAmount: number;
 }
 
 export type NewProduct = ProductFields;
@@ -189,6 +191,8 @@ function parseProducts(response: unknown): Product[] {
     const barcode = 'barcode' in product ? (product.barcode ?? null) : null;
     const stock = 'stock' in product ? (product.stock ?? null) : null;
     const unitaryPrice = 'unitaryPrice' in product ? (product.unitaryPrice ?? null) : null;
+    const baseStockAmount =
+      'baseStockAmount' in product ? (product.baseStockAmount ?? null) : null;
 
     if (
       !('id' in product) ||
@@ -198,7 +202,8 @@ function parseProducts(response: unknown): Product[] {
       (typeof code !== 'string' && code !== null) ||
       (typeof barcode !== 'string' && barcode !== null) ||
       (typeof stock !== 'number' && stock !== null) ||
-      (typeof unitaryPrice !== 'number' && unitaryPrice !== null)
+      (typeof unitaryPrice !== 'number' && unitaryPrice !== null) ||
+      (typeof baseStockAmount !== 'number' && baseStockAmount !== null)
     ) {
       throw new Error('A product in the response has an invalid format.');
     }
@@ -210,6 +215,7 @@ function parseProducts(response: unknown): Product[] {
       barcode,
       stock,
       unitaryPrice,
+      baseStockAmount,
     };
   });
 }
