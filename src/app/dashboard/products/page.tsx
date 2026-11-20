@@ -23,6 +23,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { useDashboardUser } from '../dashboard-shell';
 import {
   DEFAULT_PRODUCTS_PAGE_SIZE,
@@ -31,6 +32,7 @@ import {
   useProducts,
   useUpdateProduct,
 } from '../../../services/products/products-queries';
+import { useUserStore } from '../../../services/user/user-queries';
 import type { Product, ProductFields } from '../../../services/products/products-service';
 
 function ProductInputFields({ product }: { product?: Product | null }) {
@@ -71,17 +73,10 @@ function ProductInputFields({ product }: { product?: Product | null }) {
         slotProps={{ htmlInput: { min: 0, step: 1 } }}
       />
       <TextField
-        name="idealAmount"
-        label="Cantidad ideal"
+        name="baseStockAmount"
+        label="Cantidad base"
         type="number"
-        defaultValue={product?.idealAmount ?? ''}
-        slotProps={{ htmlInput: { min: 0, step: 1 } }}
-      />
-      <TextField
-        name="lowQuantity"
-        label="Cantidad baja"
-        type="number"
-        defaultValue={product?.lowQuantity ?? ''}
+        defaultValue={product?.baseStockAmount ?? ''}
         slotProps={{ htmlInput: { min: 0, step: 1 } }}
       />
     </>
@@ -89,28 +84,47 @@ function ProductInputFields({ product }: { product?: Product | null }) {
 }
 
 function getProductFields(formData: FormData): ProductFields {
-  const optionalString = (fieldName: string) => {
+  const stringField = (fieldName: string) => String(formData.get(fieldName) ?? '').trim();
+  const numberField = (fieldName: string) => {
     const value = String(formData.get(fieldName) ?? '').trim();
-    return value || null;
-  };
-  const optionalNumber = (fieldName: string) => {
-    const value = String(formData.get(fieldName) ?? '').trim();
-    return value ? Number(value) : null;
+    return value ? Number(value) : 0;
   };
 
   return {
-    name: String(formData.get('name') ?? '').trim(),
-    code: optionalString('code'),
-    barcode: optionalString('barcode'),
-    unitaryPrice: optionalNumber('unitaryPrice'),
-    stock: optionalNumber('stock'),
-    idealAmount: optionalNumber('idealAmount'),
-    lowQuantity: optionalNumber('lowQuantity'),
+    name: stringField('name'),
+    code: stringField('code'),
+    barcode: stringField('barcode'),
+    unitaryPrice: numberField('unitaryPrice'),
+    stock: numberField('stock'),
+    baseStockAmount: numberField('baseStockAmount'),
   };
+}
+
+function getStockWarningColor(
+  product: Product,
+  idealPercentage: number,
+  lowPercentage: number
+): 'warning' | 'error' | null {
+  if (product.stock === null || product.baseStockAmount === null || product.baseStockAmount <= 0) {
+    return null;
+  }
+
+  const stockPercentage = (product.stock / product.baseStockAmount) * 100;
+
+  if (stockPercentage < lowPercentage) {
+    return 'error';
+  }
+
+  if (stockPercentage < idealPercentage) {
+    return 'warning';
+  }
+
+  return null;
 }
 
 export default function ProductsPage() {
   const user = useDashboardUser();
+  const { data: store } = useUserStore(user);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PRODUCTS_PAGE_SIZE);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -201,7 +215,6 @@ export default function ProductsPage() {
                 <TableHead>
                   <TableRow>
                     <TableCell>Nombre</TableCell>
-                    <TableCell>Código</TableCell>
                     <TableCell align="right">Existencia</TableCell>
                     <TableCell align="right">Precio unitario</TableCell>
                     <TableCell align="right" aria-label="Acciones" />
@@ -209,36 +222,60 @@ export default function ProductsPage() {
                 </TableHead>
                 <TableBody>
                   {data?.products.length ? (
-                    data.products.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell>{product.name}</TableCell>
-                        <TableCell>{product.code ?? '—'}</TableCell>
-                        <TableCell align="right">{product.stock ?? '—'}</TableCell>
-                        <TableCell align="right">
-                          {product.unitaryPrice === null
-                            ? '—'
-                            : product.unitaryPrice.toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}
-                        </TableCell>
-                        <TableCell align="right" padding="checkbox">
-                          <IconButton
-                            aria-label={`Opciones de ${product.name}`}
-                            aria-haspopup="menu"
-                            onClick={(event) => {
-                              setMenuProduct(product);
-                              setMenuAnchorEl(event.currentTarget);
-                            }}
-                          >
-                            <MoreVertIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    data.products.map((product) => {
+                      const warningColor = store
+                        ? getStockWarningColor(
+                            product,
+                            store.settings.idealPercentageOfProduct,
+                            store.settings.lowPercentageOfProduct
+                          )
+                        : null;
+
+                      return (
+                        <TableRow key={product.id}>
+                          <TableCell>{product.name}</TableCell>
+                          <TableCell align="right">
+                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                              {warningColor && (
+                                <WarningAmberIcon
+                                  color={warningColor}
+                                  fontSize="small"
+                                  aria-label={
+                                    warningColor === 'error'
+                                      ? 'Existencia baja'
+                                      : 'Existencia por debajo del ideal'
+                                  }
+                                />
+                              )}
+                              <span>{product.stock ?? '—'}</span>
+                            </Box>
+                          </TableCell>
+                          <TableCell align="right">
+                            {product.unitaryPrice === null
+                              ? '—'
+                              : product.unitaryPrice.toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                          </TableCell>
+                          <TableCell align="right" padding="checkbox">
+                            <IconButton
+                              aria-label={`Opciones de ${product.name}`}
+                              aria-haspopup="menu"
+                              onClick={(event) => {
+                                setMenuProduct(product);
+                                setMenuAnchorEl(event.currentTarget);
+                              }}
+                            >
+                              <MoreVertIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} align="center">
+                      <TableCell colSpan={4} align="center">
                         No hay productos para mostrar.
                       </TableCell>
                     </TableRow>
@@ -251,7 +288,7 @@ export default function ProductsPage() {
               count={data?.totalOfProducts ?? 0}
               page={page}
               rowsPerPage={rowsPerPage}
-              rowsPerPageOptions={[10, 25, 50, 100]}
+              rowsPerPageOptions={[10, 25, 50]}
               onPageChange={(_, selectedPage) => setPage(selectedPage)}
               onRowsPerPageChange={(event) => {
                 setRowsPerPage(Number.parseInt(event.target.value, 10));
@@ -285,25 +322,9 @@ export default function ProductsPage() {
           onSubmit={(event) => {
             event.preventDefault();
             const formData = new FormData(event.currentTarget);
-            const optionalString = (fieldName: string) => {
-              const value = String(formData.get(fieldName) ?? '').trim();
-              return value || undefined;
-            };
-            const optionalNumber = (fieldName: string) => {
-              const value = String(formData.get(fieldName) ?? '').trim();
-              return value ? Number(value) : undefined;
-            };
 
             createProduct.mutate(
-              {
-                name: String(formData.get('name')).trim(),
-                code: optionalString('code'),
-                barcode: optionalString('barcode'),
-                stock: optionalNumber('stock'),
-                unitaryPrice: optionalNumber('unitaryPrice'),
-                idealAmount: optionalNumber('idealAmount'),
-                lowQuantity: optionalNumber('lowQuantity'),
-              },
+              getProductFields(formData),
               {
                 onSuccess: () => setIsCreateDialogOpen(false),
               }

@@ -1,6 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { User } from 'firebase/auth';
-import { getUserProfile, getUserStore } from './user-service';
+import { productQueryKeys } from '../products/products-queries';
+import {
+  getUserProfile,
+  getUserStore,
+  updateUserStore,
+  type UserStore,
+  type UserStoreUpdate,
+} from './user-service';
 
 export const userQueryKeys = {
   all: ['users'] as const,
@@ -34,6 +41,49 @@ export function useUserStore(user: User | null) {
 
       const token = await user.getIdToken();
       return getUserStore(token, signal);
+    },
+  });
+}
+
+export function useUpdateUserStore(user: User | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, UserStoreUpdate>({
+    mutationFn: async (store) => {
+      if (!user) {
+        throw new Error('A signed-in user is required to update the store.');
+      }
+
+      const token = await user.getIdToken();
+      await updateUserStore(token, store);
+    },
+    onSuccess: async (_data, updatedStore) => {
+      if (!user) {
+        return;
+      }
+
+      const storeQueryKey = userQueryKeys.store(user.uid);
+      const currentStore = queryClient.getQueryData<UserStore>(storeQueryKey);
+      queryClient.setQueryData<UserStore>(storeQueryKey, (currentStore) =>
+        currentStore ? { ...currentStore, ...updatedStore } : currentStore
+      );
+
+      if (
+        currentStore &&
+        (currentStore.settings.idealPercentageOfProduct !==
+          updatedStore.settings.idealPercentageOfProduct ||
+          currentStore.settings.lowPercentageOfProduct !==
+            updatedStore.settings.lowPercentageOfProduct)
+      ) {
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: productQueryKeys.belowIdeal(user.uid),
+          }),
+          queryClient.invalidateQueries({
+            queryKey: productQueryKeys.lowQuantity(user.uid),
+          }),
+        ]);
+      }
     },
   });
 }

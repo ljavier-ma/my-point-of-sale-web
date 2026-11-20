@@ -17,14 +17,20 @@ import {
   updateProduct,
 } from './products-service';
 
-export const DEFAULT_PRODUCTS_PAGE_SIZE = 50;
+export const DEFAULT_PRODUCTS_PAGE_SIZE = 10;
 
 export const productQueryKeys = {
   all: ['products'] as const,
   detail: (userId: string, productId: string) =>
     [...productQueryKeys.all, userId, 'detail', productId] as const,
-  belowIdeal: (userId: string) => [...productQueryKeys.all, userId, 'belowIdeal'] as const,
-  lowQuantity: (userId: string) => [...productQueryKeys.all, userId, 'lowQuantity'] as const,
+  belowIdeal: (userId: string, offset?: number, limit?: number) =>
+    offset === undefined || limit === undefined
+      ? ([...productQueryKeys.all, userId, 'belowIdeal'] as const)
+      : ([...productQueryKeys.all, userId, 'belowIdeal', { offset, limit }] as const),
+  lowQuantity: (userId: string, offset?: number, limit?: number) =>
+    offset === undefined || limit === undefined
+      ? ([...productQueryKeys.all, userId, 'lowQuantity'] as const)
+      : ([...productQueryKeys.all, userId, 'lowQuantity', { offset, limit }] as const),
   search: (userId: string, name: string) =>
     [...productQueryKeys.all, userId, 'search', name] as const,
   page: (userId: string, offset: number, limit: number) =>
@@ -79,9 +85,13 @@ export function useProducts(user: User | null, offset: number, limit = DEFAULT_P
   });
 }
 
-export function useProductsBelowIdeal(user: User | null) {
+export function useProductsBelowIdeal(
+  user: User | null,
+  offset: number,
+  limit = DEFAULT_PRODUCTS_PAGE_SIZE
+) {
   return useQuery<ProductsBelowIdeal, Error>({
-    queryKey: productQueryKeys.belowIdeal(user?.uid ?? ''),
+    queryKey: productQueryKeys.belowIdeal(user?.uid ?? '', offset, limit),
     enabled: Boolean(user),
     queryFn: async ({ signal }) => {
       if (!user) {
@@ -89,14 +99,19 @@ export function useProductsBelowIdeal(user: User | null) {
       }
 
       const token = await user.getIdToken();
-      return getProductsBelowIdeal(token, signal);
+      return getProductsBelowIdeal(token, offset, limit, signal);
     },
+    placeholderData: (previousData) => previousData,
   });
 }
 
-export function useProductsWithLowQuantity(user: User | null) {
+export function useProductsWithLowQuantity(
+  user: User | null,
+  offset: number,
+  limit = DEFAULT_PRODUCTS_PAGE_SIZE
+) {
   return useQuery<ProductsWithLowQuantity, Error>({
-    queryKey: productQueryKeys.lowQuantity(user?.uid ?? ''),
+    queryKey: productQueryKeys.lowQuantity(user?.uid ?? '', offset, limit),
     enabled: Boolean(user),
     queryFn: async ({ signal }) => {
       if (!user) {
@@ -104,8 +119,9 @@ export function useProductsWithLowQuantity(user: User | null) {
       }
 
       const token = await user.getIdToken();
-      return getProductsWithLowQuantity(token, signal);
+      return getProductsWithLowQuantity(token, offset, limit, signal);
     },
+    placeholderData: (previousData) => previousData,
   });
 }
 

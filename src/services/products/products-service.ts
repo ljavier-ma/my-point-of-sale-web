@@ -13,37 +13,27 @@ export interface Product {
   barcode: string | null;
   stock: number | null;
   unitaryPrice: number | null;
-  idealAmount: number | null;
-  lowQuantity: number | null;
+  baseStockAmount: number | null;
 }
 
 export interface ProductFields {
   name: string;
-  code: string | null;
-  barcode: string | null;
-  stock: number | null;
-  unitaryPrice: number | null;
-  idealAmount: number | null;
-  lowQuantity: number | null;
+  code: string;
+  barcode: string;
+  stock: number;
+  unitaryPrice: number;
+  baseStockAmount: number;
 }
 
-export interface NewProduct {
-  name: string;
-  code?: string;
-  barcode?: string;
-  stock?: number;
-  unitaryPrice?: number;
-  idealAmount?: number;
-  lowQuantity?: number;
-}
+export type NewProduct = ProductFields;
 
 export interface PaginatedProducts {
   products: Product[];
   totalOfProducts: number;
 }
 
-export type ProductsBelowIdeal = Product[];
-export type ProductsWithLowQuantity = Product[];
+export type ProductsBelowIdeal = PaginatedProducts;
+export type ProductsWithLowQuantity = PaginatedProducts;
 
 export interface ProductSearchResult {
   id: string;
@@ -168,18 +158,56 @@ export async function getProducts(
 
 export async function getProductsBelowIdeal(
   token: string,
+  offset: number,
+  limit: number,
   signal?: AbortSignal
 ): Promise<ProductsBelowIdeal> {
-  const response = await getAuthenticatedJson(`${productsEndpoint}/bellowIdeal`, token, signal);
-  return parseProducts(response);
+  const searchParams = new URLSearchParams({
+    offset: String(offset),
+    limit: String(limit),
+  });
+  const response = await getAuthenticatedJson(
+    `${productsEndpoint}/bellowIdeal?${searchParams.toString()}`,
+    token,
+    signal
+  );
+  return parsePaginatedProducts(response);
 }
 
 export async function getProductsWithLowQuantity(
   token: string,
+  offset: number,
+  limit: number,
   signal?: AbortSignal
 ): Promise<ProductsWithLowQuantity> {
-  const response = await getAuthenticatedJson(`${productsEndpoint}/lowQuantity`, token, signal);
-  return parseProducts(response);
+  const searchParams = new URLSearchParams({
+    offset: String(offset),
+    limit: String(limit),
+  });
+  const response = await getAuthenticatedJson(
+    `${productsEndpoint}/lowQuantity?${searchParams.toString()}`,
+    token,
+    signal
+  );
+  return parsePaginatedProducts(response);
+}
+
+function parsePaginatedProducts(response: unknown): PaginatedProducts {
+  if (
+    typeof response !== 'object' ||
+    response === null ||
+    !('totalOfProducts' in response) ||
+    typeof response.totalOfProducts !== 'number' ||
+    !Number.isInteger(response.totalOfProducts) ||
+    response.totalOfProducts < 0
+  ) {
+    throw new Error('The paginated products response did not contain a valid total.');
+  }
+
+  return {
+    products: parseProducts(response),
+    totalOfProducts: response.totalOfProducts,
+  };
 }
 
 function parseProducts(response: unknown): Product[] {
@@ -201,8 +229,8 @@ function parseProducts(response: unknown): Product[] {
     const barcode = 'barcode' in product ? (product.barcode ?? null) : null;
     const stock = 'stock' in product ? (product.stock ?? null) : null;
     const unitaryPrice = 'unitaryPrice' in product ? (product.unitaryPrice ?? null) : null;
-    const idealAmount = 'idealAmount' in product ? (product.idealAmount ?? null) : null;
-    const lowQuantity = 'lowQuantity' in product ? (product.lowQuantity ?? null) : null;
+    const baseStockAmount =
+      'baseStockAmount' in product ? (product.baseStockAmount ?? null) : null;
 
     if (
       !('id' in product) ||
@@ -213,8 +241,7 @@ function parseProducts(response: unknown): Product[] {
       (typeof barcode !== 'string' && barcode !== null) ||
       (typeof stock !== 'number' && stock !== null) ||
       (typeof unitaryPrice !== 'number' && unitaryPrice !== null) ||
-      (typeof idealAmount !== 'number' && idealAmount !== null) ||
-      (typeof lowQuantity !== 'number' && lowQuantity !== null)
+      (typeof baseStockAmount !== 'number' && baseStockAmount !== null)
     ) {
       throw new Error('A product in the response has an invalid format.');
     }
@@ -226,8 +253,7 @@ function parseProducts(response: unknown): Product[] {
       barcode,
       stock,
       unitaryPrice,
-      idealAmount,
-      lowQuantity,
+      baseStockAmount,
     };
   });
 }

@@ -25,6 +25,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { getFirebaseAuth } from '../../lib/firebase';
+import { useUserProfile } from '../../services/user/user-queries';
 import { useThemeMode } from '../providers';
 
 const drawerWidth = 264;
@@ -139,6 +140,7 @@ export default function DashboardShell({ children }: { children: ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { data: userProfile } = useUserProfile(user);
 
   async function handleLogout() {
     setLogoutError(null);
@@ -194,7 +196,7 @@ export default function DashboardShell({ children }: { children: ReactNode }) {
 
   return (
     <DashboardUserContext.Provider value={user}>
-      <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      <Box sx={{ display: 'flex', height: '100dvh', overflow: 'hidden' }}>
         <Drawer
           variant="permanent"
           sx={{
@@ -234,7 +236,17 @@ export default function DashboardShell({ children }: { children: ReactNode }) {
             logoutError={logoutError}
           />
         </Drawer>
-        <Box component="main" sx={{ flex: 1, minWidth: 0 }}>
+        <Box
+          component="main"
+          sx={{
+            display: 'flex',
+            flex: 1,
+            flexDirection: 'column',
+            height: '100%',
+            minHeight: 0,
+            minWidth: 0,
+          }}
+        >
           <AppBar
             position="sticky"
             color="inherit"
@@ -259,7 +271,14 @@ export default function DashboardShell({ children }: { children: ReactNode }) {
               </Typography>
             </Toolbar>
           </AppBar>
-          <Box sx={{ p: { xs: 3, md: 4 } }}>{children}</Box>
+          <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: { xs: 3, md: 4 } }}>
+            {userProfile?.isForTesting && (
+              <Alert severity="warning" sx={{ mb: 3 }}>
+                Esta cuenta es de solo lectura; no podrás modificar la información.
+              </Alert>
+            )}
+            {children}
+          </Box>
         </Box>
       </Box>
     </DashboardUserContext.Provider>
