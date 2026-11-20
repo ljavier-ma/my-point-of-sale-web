@@ -3,6 +3,7 @@ import { API_BASE_URL } from '../api/api-config';
 
 export interface UserProfile {
   name: string;
+  isForTesting?: boolean;
 }
 
 export interface UserStoreSettings {
@@ -41,7 +42,17 @@ export async function getUserProfile(token: string, signal?: AbortSignal): Promi
     throw new Error('The user response did not contain a valid name.');
   }
 
-  return { name: response.name.trim() };
+  const hasTestingFlag = 'isForTesting' in response;
+  const isForTesting = Reflect.get(response, 'isForTesting');
+
+  if (hasTestingFlag && typeof isForTesting !== 'boolean') {
+    throw new Error('The user response contained an invalid testing flag.');
+  }
+
+  return {
+    name: response.name.trim(),
+    ...(typeof isForTesting === 'boolean' ? { isForTesting } : {}),
+  };
 }
 
 export async function getUserStore(token: string, signal?: AbortSignal): Promise<UserStore> {
