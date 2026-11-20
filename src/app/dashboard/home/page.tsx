@@ -15,6 +15,7 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
+import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -26,6 +27,7 @@ import {
   useUserStore,
 } from '../../../services/user/user-queries';
 import {
+  DEFAULT_PRODUCTS_PAGE_SIZE,
   useProductsBelowIdeal,
   useProductsWithLowQuantity,
 } from '../../../services/products/products-queries';
@@ -117,6 +119,14 @@ export default function DashboardHomePage() {
   const user = useDashboardUser();
   const [isEditingStoreName, setIsEditingStoreName] = useState(false);
   const [storeNameInput, setStoreNameInput] = useState('');
+  const [belowIdealPage, setBelowIdealPage] = useState(0);
+  const [belowIdealRowsPerPage, setBelowIdealRowsPerPage] = useState(
+    DEFAULT_PRODUCTS_PAGE_SIZE
+  );
+  const [lowQuantityPage, setLowQuantityPage] = useState(0);
+  const [lowQuantityRowsPerPage, setLowQuantityRowsPerPage] = useState(
+    DEFAULT_PRODUCTS_PAGE_SIZE
+  );
   const {
     data: profile,
     error: profileError,
@@ -139,7 +149,7 @@ export default function DashboardHomePage() {
     isFetching: isFetchingProducts,
     isPending: areProductsPending,
     refetch: refetchProducts,
-  } = useProductsBelowIdeal(user);
+  } = useProductsBelowIdeal(user, belowIdealPage * belowIdealRowsPerPage, belowIdealRowsPerPage);
   const {
     data: lowQuantityProducts,
     error: lowQuantityError,
@@ -147,7 +157,11 @@ export default function DashboardHomePage() {
     isFetching: isFetchingLowQuantity,
     isPending: areLowQuantityProductsPending,
     refetch: refetchLowQuantityProducts,
-  } = useProductsWithLowQuantity(user);
+  } = useProductsWithLowQuantity(
+    user,
+    lowQuantityPage * lowQuantityRowsPerPage,
+    lowQuantityRowsPerPage
+  );
 
   function saveStorePercentage(
     field: 'idealPercentageOfProduct' | 'lowPercentageOfProduct',
@@ -334,17 +348,24 @@ export default function DashboardHomePage() {
                 <TableHead>
                   <TableRow>
                     <TableCell>Nombre</TableCell>
-                    <TableCell>Código</TableCell>
                     <TableCell align="right">Existencia</TableCell>
+                    <TableCell align="right">Precio unitario</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {products?.length ? (
-                    products.map((product) => (
+                  {products?.products.length ? (
+                    products.products.map((product) => (
                       <TableRow key={product.id}>
                         <TableCell>{product.name}</TableCell>
-                        <TableCell>{product.code ?? '—'}</TableCell>
                         <TableCell align="right">{product.stock ?? '—'}</TableCell>
+                        <TableCell align="right">
+                          {product.unitaryPrice === null
+                            ? '—'
+                            : product.unitaryPrice.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : isProductsError ? (
@@ -363,6 +384,29 @@ export default function DashboardHomePage() {
                 </TableBody>
               </Table>
             </TableContainer>
+            <TablePagination
+              component="div"
+              count={products?.totalOfProducts ?? 0}
+              page={belowIdealPage}
+              rowsPerPage={belowIdealRowsPerPage}
+              rowsPerPageOptions={[25, 50]}
+              onPageChange={(_, selectedPage) => setBelowIdealPage(selectedPage)}
+              onRowsPerPageChange={(event) => {
+                setBelowIdealRowsPerPage(Number.parseInt(event.target.value, 10));
+                setBelowIdealPage(0);
+              }}
+              labelRowsPerPage="Filas por página:"
+              labelDisplayedRows={({ from, to, count }) =>
+                `${from}–${to} de ${count !== -1 ? count : `más de ${to}`}`
+              }
+              getItemAriaLabel={(type) => {
+                if (type === 'first') return 'Primera página';
+                if (type === 'last') return 'Última página';
+                if (type === 'next') return 'Página siguiente';
+                return 'Página anterior';
+              }}
+              sx={{ borderTop: 1, borderColor: 'divider' }}
+            />
           </Paper>
         </>
       )}
@@ -415,17 +459,24 @@ export default function DashboardHomePage() {
                 <TableHead>
                   <TableRow>
                     <TableCell>Nombre</TableCell>
-                    <TableCell>Código</TableCell>
                     <TableCell align="right">Existencia</TableCell>
+                    <TableCell align="right">Precio unitario</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {lowQuantityProducts?.length ? (
-                    lowQuantityProducts.map((product) => (
+                  {lowQuantityProducts?.products.length ? (
+                    lowQuantityProducts.products.map((product) => (
                       <TableRow key={product.id}>
                         <TableCell>{product.name}</TableCell>
-                        <TableCell>{product.code ?? '—'}</TableCell>
                         <TableCell align="right">{product.stock ?? '—'}</TableCell>
+                        <TableCell align="right">
+                          {product.unitaryPrice === null
+                            ? '—'
+                            : product.unitaryPrice.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : isLowQuantityError ? (
@@ -444,6 +495,29 @@ export default function DashboardHomePage() {
                 </TableBody>
               </Table>
             </TableContainer>
+            <TablePagination
+              component="div"
+              count={lowQuantityProducts?.totalOfProducts ?? 0}
+              page={lowQuantityPage}
+              rowsPerPage={lowQuantityRowsPerPage}
+              rowsPerPageOptions={[25, 50]}
+              onPageChange={(_, selectedPage) => setLowQuantityPage(selectedPage)}
+              onRowsPerPageChange={(event) => {
+                setLowQuantityRowsPerPage(Number.parseInt(event.target.value, 10));
+                setLowQuantityPage(0);
+              }}
+              labelRowsPerPage="Filas por página:"
+              labelDisplayedRows={({ from, to, count }) =>
+                `${from}–${to} de ${count !== -1 ? count : `más de ${to}`}`
+              }
+              getItemAriaLabel={(type) => {
+                if (type === 'first') return 'Primera página';
+                if (type === 'last') return 'Última página';
+                if (type === 'next') return 'Página siguiente';
+                return 'Página anterior';
+              }}
+              sx={{ borderTop: 1, borderColor: 'divider' }}
+            />
           </Paper>
         </>
       )}

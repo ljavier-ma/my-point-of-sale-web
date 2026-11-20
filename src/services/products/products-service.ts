@@ -32,8 +32,8 @@ export interface PaginatedProducts {
   totalOfProducts: number;
 }
 
-export type ProductsBelowIdeal = Product[];
-export type ProductsWithLowQuantity = Product[];
+export type ProductsBelowIdeal = PaginatedProducts;
+export type ProductsWithLowQuantity = PaginatedProducts;
 
 export interface ProductSearchResult {
   id: string;
@@ -158,18 +158,56 @@ export async function getProducts(
 
 export async function getProductsBelowIdeal(
   token: string,
+  offset: number,
+  limit: number,
   signal?: AbortSignal
 ): Promise<ProductsBelowIdeal> {
-  const response = await getAuthenticatedJson(`${productsEndpoint}/bellowIdeal`, token, signal);
-  return parseProducts(response);
+  const searchParams = new URLSearchParams({
+    offset: String(offset),
+    limit: String(limit),
+  });
+  const response = await getAuthenticatedJson(
+    `${productsEndpoint}/bellowIdeal?${searchParams.toString()}`,
+    token,
+    signal
+  );
+  return parsePaginatedProducts(response);
 }
 
 export async function getProductsWithLowQuantity(
   token: string,
+  offset: number,
+  limit: number,
   signal?: AbortSignal
 ): Promise<ProductsWithLowQuantity> {
-  const response = await getAuthenticatedJson(`${productsEndpoint}/lowQuantity`, token, signal);
-  return parseProducts(response);
+  const searchParams = new URLSearchParams({
+    offset: String(offset),
+    limit: String(limit),
+  });
+  const response = await getAuthenticatedJson(
+    `${productsEndpoint}/lowQuantity?${searchParams.toString()}`,
+    token,
+    signal
+  );
+  return parsePaginatedProducts(response);
+}
+
+function parsePaginatedProducts(response: unknown): PaginatedProducts {
+  if (
+    typeof response !== 'object' ||
+    response === null ||
+    !('totalOfProducts' in response) ||
+    typeof response.totalOfProducts !== 'number' ||
+    !Number.isInteger(response.totalOfProducts) ||
+    response.totalOfProducts < 0
+  ) {
+    throw new Error('The paginated products response did not contain a valid total.');
+  }
+
+  return {
+    products: parseProducts(response),
+    totalOfProducts: response.totalOfProducts,
+  };
 }
 
 function parseProducts(response: unknown): Product[] {
