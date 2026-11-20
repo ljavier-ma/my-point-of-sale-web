@@ -389,7 +389,7 @@ export default function DashboardHomePage() {
               count={products?.totalOfProducts ?? 0}
               page={belowIdealPage}
               rowsPerPage={belowIdealRowsPerPage}
-              rowsPerPageOptions={[25, 50]}
+              rowsPerPageOptions={[10, 25, 50]}
               onPageChange={(_, selectedPage) => setBelowIdealPage(selectedPage)}
               onRowsPerPageChange={(event) => {
                 setBelowIdealRowsPerPage(Number.parseInt(event.target.value, 10));
@@ -500,7 +500,7 @@ export default function DashboardHomePage() {
               count={lowQuantityProducts?.totalOfProducts ?? 0}
               page={lowQuantityPage}
               rowsPerPage={lowQuantityRowsPerPage}
-              rowsPerPageOptions={[25, 50]}
+              rowsPerPageOptions={[10, 25, 50]}
               onPageChange={(_, selectedPage) => setLowQuantityPage(selectedPage)}
               onRowsPerPageChange={(event) => {
                 setLowQuantityRowsPerPage(Number.parseInt(event.target.value, 10));

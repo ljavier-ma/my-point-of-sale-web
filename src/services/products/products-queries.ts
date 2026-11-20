@@ -17,7 +17,7 @@ import {
   updateProduct,
 } from './products-service';
 
-export const DEFAULT_PRODUCTS_PAGE_SIZE = 25;
+export const DEFAULT_PRODUCTS_PAGE_SIZE = 10;
 
 export const productQueryKeys = {
   all: ['products'] as const,
