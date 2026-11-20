@@ -25,6 +25,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { getFirebaseAuth } from '../../lib/firebase';
+import { useUserProfile } from '../../services/user/user-queries';
 import { useThemeMode } from '../providers';
 
 const drawerWidth = 264;
@@ -139,6 +140,7 @@ export default function DashboardShell({ children }: { children: ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { data: userProfile } = useUserProfile(user);
 
   async function handleLogout() {
     setLogoutError(null);
@@ -270,6 +272,11 @@ export default function DashboardShell({ children }: { children: ReactNode }) {
             </Toolbar>
           </AppBar>
           <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: { xs: 3, md: 4 } }}>
+            {userProfile?.isForTesting && (
+              <Alert severity="warning" sx={{ mb: 3 }}>
+                Esta cuenta es de solo lectura; no podrás modificar la información.
+              </Alert>
+            )}
             {children}
           </Box>
         </Box>
