@@ -194,7 +194,7 @@ export default function DashboardShell({ children }: { children: ReactNode }) {
 
   return (
     <DashboardUserContext.Provider value={user}>
-      <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      <Box sx={{ display: 'flex', height: '100dvh', overflow: 'hidden' }}>
         <Drawer
           variant="permanent"
           sx={{
@@ -234,7 +234,17 @@ export default function DashboardShell({ children }: { children: ReactNode }) {
             logoutError={logoutError}
           />
         </Drawer>
-        <Box component="main" sx={{ flex: 1, minWidth: 0 }}>
+        <Box
+          component="main"
+          sx={{
+            display: 'flex',
+            flex: 1,
+            flexDirection: 'column',
+            height: '100%',
+            minHeight: 0,
+            minWidth: 0,
+          }}
+        >
           <AppBar
             position="sticky"
             color="inherit"
@@ -259,7 +269,9 @@ export default function DashboardShell({ children }: { children: ReactNode }) {
               </Typography>
             </Toolbar>
           </AppBar>
-          <Box sx={{ p: { xs: 3, md: 4 } }}>{children}</Box>
+          <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: { xs: 3, md: 4 } }}>
+            {children}
+          </Box>
         </Box>
       </Box>
     </DashboardUserContext.Provider>
