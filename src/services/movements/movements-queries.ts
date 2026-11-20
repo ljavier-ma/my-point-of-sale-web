@@ -7,7 +7,7 @@ import {
   type PaginatedMovements,
 } from './movements-service';
 
-export const DEFAULT_MOVEMENTS_PAGE_SIZE = 50;
+export const DEFAULT_MOVEMENTS_PAGE_SIZE = 10;
 
 export const movementQueryKeys = {
   all: ['movements'] as const,
