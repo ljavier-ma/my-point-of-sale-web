@@ -13,6 +13,7 @@ export interface Product {
   barcode: string | null;
   stock: number | null;
   unitaryPrice: number | null;
+  publicPrice: number;
   baseStockAmount: number | null;
 }
 
@@ -22,6 +23,7 @@ export interface ProductFields {
   barcode: string;
   stock: number;
   unitaryPrice: number;
+  publicPrice: number;
   baseStockAmount: number;
 }
 
@@ -38,6 +40,7 @@ export type ProductsWithLowQuantity = PaginatedProducts;
 export interface ProductSearchResult {
   id: string;
   name: string;
+  publicPrice: number;
 }
 
 const productsEndpoint = `${API_BASE_URL}/products`;
@@ -114,12 +117,14 @@ export async function searchProductsByName(
       !('id' in product) ||
       typeof product.id !== 'string' ||
       !('name' in product) ||
-      typeof product.name !== 'string'
+      typeof product.name !== 'string' ||
+      !('publicPrice' in product) ||
+      typeof product.publicPrice !== 'number'
     ) {
       throw new Error('A product in the search response has an invalid format.');
     }
 
-    return { id: product.id, name: product.name };
+    return { id: product.id, name: product.name, publicPrice: product.publicPrice };
   });
 }
 
@@ -229,6 +234,7 @@ function parseProducts(response: unknown): Product[] {
     const barcode = 'barcode' in product ? (product.barcode ?? null) : null;
     const stock = 'stock' in product ? (product.stock ?? null) : null;
     const unitaryPrice = 'unitaryPrice' in product ? (product.unitaryPrice ?? null) : null;
+    const publicPrice = 'publicPrice' in product ? product.publicPrice : null;
     const baseStockAmount =
       'baseStockAmount' in product ? (product.baseStockAmount ?? null) : null;
 
@@ -241,6 +247,7 @@ function parseProducts(response: unknown): Product[] {
       (typeof barcode !== 'string' && barcode !== null) ||
       (typeof stock !== 'number' && stock !== null) ||
       (typeof unitaryPrice !== 'number' && unitaryPrice !== null) ||
+      typeof publicPrice !== 'number' ||
       (typeof baseStockAmount !== 'number' && baseStockAmount !== null)
     ) {
       throw new Error('A product in the response has an invalid format.');
@@ -253,6 +260,7 @@ function parseProducts(response: unknown): Product[] {
       barcode,
       stock,
       unitaryPrice,
+      publicPrice,
       baseStockAmount,
     };
   });
