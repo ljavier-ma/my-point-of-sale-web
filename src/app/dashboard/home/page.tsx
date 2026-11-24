@@ -350,6 +350,7 @@ export default function DashboardHomePage() {
                     <TableCell>Nombre</TableCell>
                     <TableCell align="right">Existencia</TableCell>
                     <TableCell align="right">Precio unitario</TableCell>
+                    <TableCell align="right">Precio público</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -361,22 +362,28 @@ export default function DashboardHomePage() {
                         <TableCell align="right">
                           {product.unitaryPrice === null
                             ? '—'
-                            : product.unitaryPrice.toLocaleString(undefined, {
+                            : `$${product.unitaryPrice.toLocaleString(undefined, {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
-                              })}
+                              })}`}
+                        </TableCell>
+                        <TableCell align="right">
+                          {`$${product.publicPrice.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}`}
                         </TableCell>
                       </TableRow>
                     ))
                   ) : isProductsError ? (
                     <TableRow>
-                      <TableCell colSpan={3} align="center">
+                      <TableCell colSpan={4} align="center">
                         No se pudieron cargar los productos.
                       </TableCell>
                     </TableRow>
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={3} align="center">
+                      <TableCell colSpan={4} align="center">
                         No hay productos por debajo de la cantidad ideal.
                       </TableCell>
                     </TableRow>
@@ -461,6 +468,7 @@ export default function DashboardHomePage() {
                     <TableCell>Nombre</TableCell>
                     <TableCell align="right">Existencia</TableCell>
                     <TableCell align="right">Precio unitario</TableCell>
+                    <TableCell align="right">Precio público</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -472,22 +480,28 @@ export default function DashboardHomePage() {
                         <TableCell align="right">
                           {product.unitaryPrice === null
                             ? '—'
-                            : product.unitaryPrice.toLocaleString(undefined, {
+                            : `$${product.unitaryPrice.toLocaleString(undefined, {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
-                              })}
+                              })}`}
+                        </TableCell>
+                        <TableCell align="right">
+                          {`$${product.publicPrice.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}`}
                         </TableCell>
                       </TableRow>
                     ))
                   ) : isLowQuantityError ? (
                     <TableRow>
-                      <TableCell colSpan={3} align="center">
+                      <TableCell colSpan={4} align="center">
                         No se pudieron cargar los productos.
                       </TableCell>
                     </TableRow>
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={3} align="center">
+                      <TableCell colSpan={4} align="center">
                         No hay productos con cantidad baja.
                       </TableCell>
                     </TableRow>
