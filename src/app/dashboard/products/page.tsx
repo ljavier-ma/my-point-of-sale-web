@@ -66,6 +66,13 @@ function ProductInputFields({ product }: { product?: Product | null }) {
         slotProps={{ htmlInput: { min: 0, step: '0.01' } }}
       />
       <TextField
+        name="publicPrice"
+        label="Precio público"
+        type="number"
+        defaultValue={product?.publicPrice ?? ''}
+        slotProps={{ htmlInput: { min: 0, step: '0.01' } }}
+      />
+      <TextField
         name="stock"
         label="Existencia"
         type="number"
@@ -95,6 +102,7 @@ function getProductFields(formData: FormData): ProductFields {
     code: stringField('code'),
     barcode: stringField('barcode'),
     unitaryPrice: numberField('unitaryPrice'),
+    publicPrice: numberField('publicPrice'),
     stock: numberField('stock'),
     baseStockAmount: numberField('baseStockAmount'),
   };
@@ -217,6 +225,7 @@ export default function ProductsPage() {
                     <TableCell>Nombre</TableCell>
                     <TableCell align="right">Existencia</TableCell>
                     <TableCell align="right">Precio unitario</TableCell>
+                    <TableCell align="right">Precio público</TableCell>
                     <TableCell align="right" aria-label="Acciones" />
                   </TableRow>
                 </TableHead>
@@ -253,10 +262,16 @@ export default function ProductsPage() {
                           <TableCell align="right">
                             {product.unitaryPrice === null
                               ? '—'
-                              : product.unitaryPrice.toLocaleString(undefined, {
+                              : `$${product.unitaryPrice.toLocaleString(undefined, {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
-                                })}
+                                })}`}
+                          </TableCell>
+                          <TableCell align="right">
+                            {`$${product.publicPrice.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}`}
                           </TableCell>
                           <TableCell align="right" padding="checkbox">
                             <IconButton
@@ -275,7 +290,7 @@ export default function ProductsPage() {
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} align="center">
+                      <TableCell colSpan={5} align="center">
                         No hay productos para mostrar.
                       </TableCell>
                     </TableRow>
