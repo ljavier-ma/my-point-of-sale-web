@@ -35,6 +35,18 @@ import {
 import { useUserStore } from '../../../services/user/user-queries';
 import type { Product, ProductFields } from '../../../services/products/products-service';
 
+const measurementUnits = [
+  { label: 'pzas', value: 'pzas' },
+  { label: 'kg', value: 'kg' },
+  { label: 'g', value: 'g' },
+  { label: 'l', value: 'l' },
+  { label: 'ml', value: 'ml' },
+] as const;
+
+function getMeasurementUnitValue(value?: string | null): string {
+  return measurementUnits.find((unit) => unit.value === value)?.value ?? '';
+}
+
 function ProductInputFields({ product }: { product?: Product | null }) {
   return (
     <>
@@ -72,13 +84,35 @@ function ProductInputFields({ product }: { product?: Product | null }) {
         defaultValue={product?.publicPrice ?? ''}
         slotProps={{ htmlInput: { min: 0, step: '0.01' } }}
       />
-      <TextField
-        name="stock"
-        label="Existencia"
-        type="number"
-        defaultValue={product?.stock ?? ''}
-        slotProps={{ htmlInput: { min: 0, step: 1 } }}
-      />
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'minmax(0, 1fr) 200px' },
+          gap: 2,
+        }}
+      >
+        <TextField
+          name="stock"
+          label="Existencia"
+          type="number"
+          defaultValue={product?.stock ?? ''}
+          slotProps={{ htmlInput: { min: 0, step: 1 } }}
+        />
+        <TextField
+          select
+          fullWidth
+          name="measurementUnit"
+          label="Unidad de medida"
+          defaultValue={getMeasurementUnitValue(product?.measurementUnit)}
+        >
+          <MenuItem value="">—</MenuItem>
+          {measurementUnits.map((unit) => (
+            <MenuItem key={unit.value} value={unit.value}>
+              {unit.label}
+            </MenuItem>
+          ))}
+        </TextField>
+      </Box>
       <TextField
         name="baseStockAmount"
         label="Cantidad base"
@@ -101,6 +135,7 @@ function getProductFields(formData: FormData): ProductFields {
     name: stringField('name'),
     code: stringField('code'),
     barcode: stringField('barcode'),
+    measurementUnit: stringField('measurementUnit'),
     unitaryPrice: numberField('unitaryPrice'),
     publicPrice: numberField('publicPrice'),
     stock: numberField('stock'),
@@ -257,6 +292,15 @@ export default function ProductsPage() {
                                 />
                               )}
                               <span>{product.stock ?? '—'}</span>
+                              {product.measurementUnit && (
+                                <Typography
+                                  component="span"
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  ({product.measurementUnit})
+                                </Typography>
+                              )}
                             </Box>
                           </TableCell>
                           <TableCell align="right">

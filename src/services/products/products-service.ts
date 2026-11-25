@@ -11,6 +11,7 @@ export interface Product {
   code: string | null;
   name: string;
   barcode: string | null;
+  measurementUnit: string;
   stock: number | null;
   unitaryPrice: number | null;
   publicPrice: number;
@@ -21,6 +22,7 @@ export interface ProductFields {
   name: string;
   code: string;
   barcode: string;
+  measurementUnit: string;
   stock: number;
   unitaryPrice: number;
   publicPrice: number;
@@ -232,6 +234,7 @@ function parseProducts(response: unknown): Product[] {
 
     const code = 'code' in product ? (product.code ?? null) : null;
     const barcode = 'barcode' in product ? (product.barcode ?? null) : null;
+    const measurementUnit = 'measurementUnit' in product ? product.measurementUnit : '';
     const stock = 'stock' in product ? (product.stock ?? null) : null;
     const unitaryPrice = 'unitaryPrice' in product ? (product.unitaryPrice ?? null) : null;
     const publicPrice = 'publicPrice' in product ? product.publicPrice : null;
@@ -245,6 +248,7 @@ function parseProducts(response: unknown): Product[] {
       typeof product.name !== 'string' ||
       (typeof code !== 'string' && code !== null) ||
       (typeof barcode !== 'string' && barcode !== null) ||
+      typeof measurementUnit !== 'string' ||
       (typeof stock !== 'number' && stock !== null) ||
       (typeof unitaryPrice !== 'number' && unitaryPrice !== null) ||
       typeof publicPrice !== 'number' ||
@@ -258,6 +262,7 @@ function parseProducts(response: unknown): Product[] {
       code,
       name: product.name,
       barcode,
+      measurementUnit,
       stock,
       unitaryPrice,
       publicPrice,
